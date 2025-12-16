@@ -28,3 +28,7 @@ replay_pid*
 
 # Environment variables
 .env
+
+# Core dumps
+core
+core.*

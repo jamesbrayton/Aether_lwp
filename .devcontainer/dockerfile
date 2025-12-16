@@ -153,7 +153,7 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
 RUN curl -fsSL https://install.claude.ai | sh
 
 # Install uv (modern Python package manager) as developer user for uvx
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+RUN curl -fsSL https://claude.ai/install.sh | sh
 
 # Set up environment variables in .zshrc
 RUN echo "export JAVA_HOME=$JAVA_HOME" >> /home/$USERNAME/.zshrc && \
