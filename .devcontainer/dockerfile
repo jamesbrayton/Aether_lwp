@@ -150,10 +150,10 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
     sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="agnoster"/g' /home/$USERNAME/.zshrc
 
 # Install ClaudeCode CLI as developer user
-RUN curl -fsSL https://install.claude.ai | sh
+RUN curl -fsSL https://install.claude.ai/install.sh | bash
 
 # Install uv (modern Python package manager) as developer user for uvx
-RUN curl -fsSL https://claude.ai/install.sh | sh
+RUN curl -LsSf https://astral.sh/uv/install.sh | bash
 
 # Set up environment variables in .zshrc
 RUN echo "export JAVA_HOME=$JAVA_HOME" >> /home/$USERNAME/.zshrc && \
