@@ -30,12 +30,20 @@ RUN apt update && apt install -y \
     software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
-# Install additional useful tools
+# Install additional useful tools and Android emulator dependencies
 RUN apt update && apt install -y \
     vim \
     nano \
     htop \
     tree \
+    libpulse0 \
+    libgl1 \
+    libnss3 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxi6 \
+    libxtst6 \
+    libasound2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Java 21 (Eclipse Temurin from Adoptium)
@@ -81,9 +89,12 @@ RUN yes | sdkmanager --licenses && \
     "platforms;android-33" \
     "build-tools;34.0.0" \
     "ndk;26.1.10909125" \
-    "cmake;3.22.1" \
-    "emulator" && \
+    "cmake;3.22.1" && \
     sdkmanager --update
+
+# Install emulator separately (optional - may fail in some environments)
+# Emulator is not required for building Android apps, only for running them
+RUN sdkmanager --install "emulator" || echo "Warning: Emulator installation failed (not critical for builds)"
 
 # Install Gradle (version pinned for reproducibility)
 ENV GRADLE_VERSION=8.7
