@@ -1,0 +1,50 @@
+{
+	"servers": {
+		"context7": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@upstash/context7-mcp"
+			]
+		},
+		"memorybank":{
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"github:jamesbrayton/memory-bank-mcp"
+			],
+			"env": {
+				"MEMORY_BANK_ROOT": "${workspaceFolder}/.memoryBank"
+			}
+		},
+		"filesystem": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-filesystem",
+				"${workspaceFolder}"
+			]
+		},
+		"microsoft/markitdown": {
+			"type": "stdio",
+			"command": "uvx",
+			"args": [
+				"markitdown-mcp==0.0.1a4"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.0.0"
+		},
+        "microsoftdocs/mcp": {
+			"type": "http",
+			"url": "https://learn.microsoft.com/api/mcp",
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.0.0"
+		}
+	},
+	"inputs": [
+		
+	]
+}
