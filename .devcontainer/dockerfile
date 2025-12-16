@@ -43,7 +43,7 @@ RUN apt update && apt install -y \
     libxcursor1 \
     libxi6 \
     libxtst6 \
-    libasound2 \
+    libasound2t64 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Java 21 (Eclipse Temurin from Adoptium)
@@ -114,24 +114,20 @@ ENV PATH=$PATH:/opt/kotlinc/bin
 # Install ClaudeCode CLI (optional)
 RUN curl -fsSL https://install.claude.ai | sh
 
-# RUN groupadd --gid $USER_GID $USERNAME && \
-#     useradd --uid $USER_UID --gid $USER_GID -m -s /bin/bash $USERNAME && \
-#     mkdir -p /workspace && \
-#     chown -R $USERNAME:$USERNAME /workspace $ANDROID_HOME
+# User creation and permissions are handled by the common-utils feature
+# which runs after the Dockerfile is built
 
-RUN chown -R $USERNAME:$USERNAME /home/$USERNAME /workspace $ANDROID_HOME
+# Create necessary directories with appropriate permissions
+RUN mkdir -p /workspace && \
+    chmod 755 /workspace && \
+    chmod -R 755 $ANDROID_HOME
 
-# Grant sudo access (useful for installing additional packages)
-RUN apt update && apt install -y sudo && \
-    echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
-    chmod 0440 /etc/sudoers.d/$USERNAME && \
-    rm -rf /var/lib/apt/lists/*
+# Note: sudo access is granted by the common-utils feature
 
-# Switch to developer user
-USER $USERNAME
+# Set working directory (user will be set by devcontainer features)
 WORKDIR /workspace
 
-# Verify all installations
+# Verify all installations (run as root before user switch)
 RUN echo "=== Environment Verification ===" && \
     echo "Java:" && java -version && \
     echo "\nGradle:" && gradle -version && \
@@ -141,3 +137,9 @@ RUN echo "=== Environment Verification ===" && \
 
 # Set default shell
 CMD ["/bin/bash"]
+
+# Note: The common-utils feature will:
+# 1. Create the developer user with automatic UID/GID
+# 2. Set up sudo access
+# 3. Install and configure zsh/oh-my-zsh
+# 4. Set proper ownership of directories
