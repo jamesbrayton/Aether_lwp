@@ -114,20 +114,45 @@ ENV PATH=$PATH:/opt/kotlinc/bin
 # Install ClaudeCode CLI (optional)
 RUN curl -fsSL https://install.claude.ai | sh
 
-# User creation and permissions are handled by the common-utils feature
-# which runs after the Dockerfile is built
+# Install ZSH and oh-my-zsh
+RUN apt update && apt install -y \
+    zsh \
+    fonts-powerline \
+    locales \
+    sudo \
+    && rm -rf /var/lib/apt/lists/* && \
+    locale-gen en_US.UTF-8
 
-# Create necessary directories with appropriate permissions
+# Create non-root user with sudo access
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+RUN groupadd --gid $USER_GID $USERNAME && \
+    useradd --uid $USER_UID --gid $USER_GID -m -s /bin/zsh $USERNAME && \
+    echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
+    chmod 0440 /etc/sudoers.d/$USERNAME
+
+# Create workspace directory and set permissions
 RUN mkdir -p /workspace && \
-    chmod 755 /workspace && \
-    chmod -R 755 $ANDROID_HOME
+    chown -R $USERNAME:$USERNAME /home/$USERNAME /workspace $ANDROID_HOME
 
-# Note: sudo access is granted by the common-utils feature
+# Switch to developer user for oh-my-zsh installation
+USER $USERNAME
+WORKDIR /home/$USERNAME
 
-# Set working directory (user will be set by devcontainer features)
+# Install oh-my-zsh
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended && \
+    sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="agnoster"/g' /home/$USERNAME/.zshrc
+
+# Set up environment variables in .zshrc
+RUN echo "export JAVA_HOME=$JAVA_HOME" >> /home/$USERNAME/.zshrc && \
+    echo "export ANDROID_HOME=$ANDROID_HOME" >> /home/$USERNAME/.zshrc && \
+    echo "export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> /home/$USERNAME/.zshrc && \
+    echo "export PATH=$PATH" >> /home/$USERNAME/.zshrc
+
+# Set working directory
 WORKDIR /workspace
 
-# Verify all installations (run as root before user switch)
+# Verify all installations
 RUN echo "=== Environment Verification ===" && \
     echo "Java:" && java -version && \
     echo "\nGradle:" && gradle -version && \
@@ -135,11 +160,5 @@ RUN echo "=== Environment Verification ===" && \
     echo "\nADB:" && adb version && \
     echo "\nSDK Manager:" && sdkmanager --list | head -20
 
-# Set default shell
-CMD ["/bin/bash"]
-
-# Note: The common-utils feature will:
-# 1. Create the developer user with automatic UID/GID
-# 2. Set up sudo access
-# 3. Install and configure zsh/oh-my-zsh
-# 4. Set proper ownership of directories
+# Set default shell to ZSH
+CMD ["/bin/zsh"]

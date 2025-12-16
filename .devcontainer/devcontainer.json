@@ -1,0 +1,84 @@
+{
+  "name": "Aether Android Development",
+  
+  // Use your custom image
+  "build": {
+    "dockerfile": "dockerfile",
+    "context": "..",
+    "args": {
+      // Build arguments for Dockerfile
+      "USERNAME": "developer"
+    }
+  },
+  
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  
+  // Enable USB device access for ADB
+  "runArgs": [
+    "--device=/dev/bus/usb",
+    "--privileged"
+  ],
+  
+  // Optional: persistent home directory for Gradle cache, etc.
+  "mounts": [
+  ],
+
+  "remoteEnv": {
+    "PATH":"${containerEnv:HOME}/.local/bin:${containerEnv:PATH}"
+  },
+  
+  // Minimal post-create (everything is pre-installed)
+  "postCreateCommand": "echo '🚀 Aether development environment ready!'",
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "fwcd.kotlin",
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-gradle",
+        "slevesque.shader",
+        "raczzalan.webgl-glsl-editor",
+        "vscjava.vscode-java-dependency",
+        "eamodio.gitlens",
+        "streetsidesoftware.code-spell-checker",
+        "EditorConfig.EditorConfig",
+        "ms-azuretools.vscode-containers",
+        "ms-vscode-remote.remote-containers",
+        "ms-vscode-remote.remote-ssh",
+        "ms-vscode-remote.remote-ssh-edit",
+        "ms-vscode.remote-explorer",
+        "GitHub.copilot",
+        "esbenp.prettier-vscode",
+        "DavidAnson.vscode-markdownlint",
+        "GitHub.copilot-chat"
+      ],
+      
+      "settings": {
+        "java.configuration.runtimes": [
+          {
+            "name": "JavaSE-21",
+            "path": "/usr/lib/jvm/temurin-21-jdk-amd64",
+            "default": true
+          }
+        ],
+        "java.jdt.ls.java.home": "/usr/lib/jvm/temurin-21-jdk-amd64",
+        "files.watcherExclude": {
+          "**/build/**": true,
+          "**/.gradle/**": true,
+          "**/.idea/**": true
+        },
+        "files.exclude": {
+          "**/.gradle": true,
+          "**/build": true
+        }
+      }
+    }
+  },
+  
+  // Forward ADB port for device connection
+  "forwardPorts": [5037],
+  
+  // Run as developer user (matches Dockerfile)
+  "remoteUser": "developer"
+}
