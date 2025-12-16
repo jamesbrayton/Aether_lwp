@@ -1,0 +1,136 @@
+# Dockerfile for Aether Android Development Environment
+FROM ubuntu:noble
+
+# Metadata
+LABEL maintainer="jamesgbrayton@gmail.com"
+LABEL description="Android development environment for Aether wallpaper project"
+LABEL version="1.0"
+LABEL java.version="21"
+LABEL android.sdk="34"
+LABEL gradle.version="8.7"
+LABEL kotlin.version="1.9.23"
+
+# Create a non-root user for development
+ARG USERNAME=developer
+# ARG USER_UID=1000
+# ARG USER_GID=$USER_UID
+
+# Avoid interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install base system dependencies
+RUN apt update && apt install -y \
+    curl \
+    wget \
+    unzip \
+    git \
+    build-essential \
+    ca-certificates \
+    gnupg \
+    software-properties-common \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install additional useful tools
+RUN apt update && apt install -y \
+    vim \
+    nano \
+    htop \
+    tree \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Java 21 (Eclipse Temurin from Adoptium)
+RUN wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor -o /usr/share/keyrings/adoptium-archive-keyring.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/adoptium-archive-keyring.gpg] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list && \
+    apt update && \
+    apt install -y temurin-21-jdk && \
+    rm -rf /var/lib/apt/lists/*
+
+# Determine and set Java environment
+# The temurin package may install to different paths, so we dynamically detect it
+RUN JAVA_PATH=$(dirname $(dirname $(readlink -f /usr/bin/java))) && \
+    echo "JAVA_HOME=${JAVA_PATH}" >> /etc/environment && \
+    echo "PATH=\$PATH:\$JAVA_HOME/bin" >> /etc/environment && \
+    echo "Detected and configured JAVA_HOME: ${JAVA_PATH}" && \
+    ls -la ${JAVA_PATH}
+
+# Set ENV variables for Docker (note: must be set after detection or use a known path)
+# We'll use the standard location but the above RUN ensures /etc/environment is correct for shell sessions
+ENV JAVA_HOME=/usr/lib/jvm/temurin-21-jdk-amd64
+ENV PATH=$PATH:$JAVA_HOME/bin
+
+# Final verification - this will fail if JAVA_HOME is incorrect
+RUN java -version && javac -version && echo "JAVA_HOME=${JAVA_HOME}" && test -d ${JAVA_HOME}
+
+# Set up Android SDK environment variables
+ENV ANDROID_HOME=/opt/android-sdk
+ENV ANDROID_SDK_ROOT=$ANDROID_HOME
+ENV PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/34.0.0
+
+# Download and install Android command line tools
+# Version pinned for reproducibility - update this when needed
+ENV ANDROID_CMDLINE_TOOLS_VERSION=9477386
+RUN mkdir -p $ANDROID_HOME/cmdline-tools && \
+    cd $ANDROID_HOME/cmdline-tools && \
+    wget -q https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS_VERSION}_latest.zip && \
+    unzip -q commandlinetools-linux-${ANDROID_CMDLINE_TOOLS_VERSION}_latest.zip && \
+    rm commandlinetools-linux-${ANDROID_CMDLINE_TOOLS_VERSION}_latest.zip && \
+    mv cmdline-tools latest
+
+# Accept licenses and install Android SDK components
+# These versions should be updated as new stable versions release
+RUN yes | sdkmanager --licenses && \
+    sdkmanager --install \
+    "platform-tools" \
+    "platforms;android-34" \
+    "platforms;android-33" \
+    "build-tools;34.0.0" \
+    "ndk;26.1.10909125" \
+    "cmake;3.22.1" \
+    "emulator" && \
+    sdkmanager --update
+
+# Install Gradle (version pinned for reproducibility)
+ENV GRADLE_VERSION=8.7
+RUN wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip && \
+    unzip -q gradle-${GRADLE_VERSION}-bin.zip -d /opt && \
+    rm gradle-${GRADLE_VERSION}-bin.zip && \
+    ln -s /opt/gradle-${GRADLE_VERSION} /opt/gradle
+ENV PATH=$PATH:/opt/gradle/bin
+
+# Install Kotlin compiler (optional - Gradle includes it, but nice for CLI usage)
+ENV KOTLIN_VERSION=1.9.23
+RUN wget -q https://github.com/JetBrains/kotlin/releases/download/v${KOTLIN_VERSION}/kotlin-compiler-${KOTLIN_VERSION}.zip && \
+    unzip -q kotlin-compiler-${KOTLIN_VERSION}.zip -d /opt && \
+    rm kotlin-compiler-${KOTLIN_VERSION}.zip
+ENV PATH=$PATH:/opt/kotlinc/bin
+
+# Install ClaudeCode CLI (optional)
+RUN curl -fsSL https://install.claude.ai | sh
+
+# RUN groupadd --gid $USER_GID $USERNAME && \
+#     useradd --uid $USER_UID --gid $USER_GID -m -s /bin/bash $USERNAME && \
+#     mkdir -p /workspace && \
+#     chown -R $USERNAME:$USERNAME /workspace $ANDROID_HOME
+
+RUN chown -R $USERNAME:$USERNAME /home/$USERNAME /workspace $ANDROID_HOME
+
+# Grant sudo access (useful for installing additional packages)
+RUN apt update && apt install -y sudo && \
+    echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
+    chmod 0440 /etc/sudoers.d/$USERNAME && \
+    rm -rf /var/lib/apt/lists/*
+
+# Switch to developer user
+USER $USERNAME
+WORKDIR /workspace
+
+# Verify all installations
+RUN echo "=== Environment Verification ===" && \
+    echo "Java:" && java -version && \
+    echo "\nGradle:" && gradle -version && \
+    echo "\nKotlin:" && kotlin -version && \
+    echo "\nADB:" && adb version && \
+    echo "\nSDK Manager:" && sdkmanager --list | head -20
+
+# Set default shell
+CMD ["/bin/bash"]
