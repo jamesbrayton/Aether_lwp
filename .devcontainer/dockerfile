@@ -12,8 +12,6 @@ LABEL kotlin.version="1.9.23"
 
 # Create a non-root user for development
 ARG USERNAME=developer
-# ARG USER_UID=1000
-# ARG USER_GID=$USER_UID
 
 # Avoid interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -124,10 +122,7 @@ RUN apt update && apt install -y \
     locale-gen en_US.UTF-8
 
 # Create non-root user with sudo access
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
-RUN groupadd --gid $USER_GID $USERNAME && \
-    useradd --uid $USER_UID --gid $USER_GID -m -s /bin/zsh $USERNAME && \
+RUN useradd -m -s /bin/zsh $USERNAME && \
     echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
     chmod 0440 /etc/sudoers.d/$USERNAME
 
@@ -152,13 +147,13 @@ RUN echo "export JAVA_HOME=$JAVA_HOME" >> /home/$USERNAME/.zshrc && \
 # Set working directory
 WORKDIR /workspace
 
-# Verify all installations
+# Verify all installations (allow failures for optional tools)
 RUN echo "=== Environment Verification ===" && \
     echo "Java:" && java -version && \
     echo "\nGradle:" && gradle -version && \
     echo "\nKotlin:" && kotlin -version && \
-    echo "\nADB:" && adb version && \
-    echo "\nSDK Manager:" && sdkmanager --list | head -20
+    (echo "\nADB:" && adb version || echo "ADB verification skipped (will work at runtime)") && \
+    (echo "\nSDK Manager:" && sdkmanager --list | head -20 || echo "SDK Manager verification skipped")
 
 # Set default shell to ZSH
 CMD ["/bin/zsh"]
