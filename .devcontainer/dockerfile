@@ -150,7 +150,7 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
     sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="agnoster"/g' /home/$USERNAME/.zshrc
 
 # Install ClaudeCode CLI as developer user
-RUN curl -fsSL https://install.claude.ai/install.sh | bash
+RUN curl -fsSL https://claude.ai/install.sh | bash
 
 # Install uv (modern Python package manager) as developer user for uvx
 RUN curl -LsSf https://astral.sh/uv/install.sh | bash
