@@ -1,16 +1,24 @@
 name: Android Build and Release
 
 on:
+  # Manual trigger for feature branches (push-button builds)
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create GitHub Release?'
+        required: false
+        type: boolean
+        default: true
+  
+  # Auto-build and release on main branch
   push:
     branches:
       - main
-      - mvp
-    tags:
-      - 'v*'
+  
+  # Test builds for PRs (no release)
   pull_request:
     branches:
       - main
-      - mvp
 
 jobs:
   build:
@@ -81,33 +89,36 @@ jobs:
           retention-days: 7
       
       - name: Build debug APK
-        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/mvp'
+        if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
         run: ./gradlew assembleDebug
       
       - name: Upload debug APK
-        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/mvp'
+        if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
       
-      - name: Build release APK (unsigned)
+      - name: Build release APK
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: ./gradlew assembleRelease
       
-      - name: Upload release APK (unsigned)
+      - name: Upload release APK
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-unsigned
-          path: app/build/outputs/apk/release/app-release-unsigned.apk
-          retention-days: 30
+          name: app-release
+          path: app/build/outputs/apk/release/app-release*.apk
+          retention-days: 90
 
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Create release on main push or manual trigger (with create_release=true)
+    if: |
+      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
     needs: build
     
     permissions:
@@ -130,12 +141,31 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
       
-      - name: Extract version from tag
+      - name: Extract version info
         id: version
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "Release version: ${VERSION}"
+          # Extract version from build.gradle.kts
+          VERSION_NAME=$(grep "versionName =" app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+          VERSION_CODE=$(grep "versionCode =" app/build.gradle.kts | sed 's/.*= \(.*\)/\1/')
+          
+          # Generate release tag from version + date + commit
+          COMMIT_SHORT=$(git rev-parse --short HEAD)
+          BUILD_DATE=$(date +%Y%m%d)
+          RELEASE_TAG="${VERSION_NAME}+${BUILD_DATE}.${COMMIT_SHORT}"
+          
+          # For manual builds, include branch name
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//-/g')
+            RELEASE_TAG="${VERSION_NAME}-${BRANCH_NAME}+${BUILD_DATE}.${COMMIT_SHORT}"
+          fi
+          
+          echo "version=${VERSION_NAME}" >> $GITHUB_OUTPUT
+          echo "version_code=${VERSION_CODE}" >> $GITHUB_OUTPUT
+          echo "release_tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+          echo "commit_short=${COMMIT_SHORT}" >> $GITHUB_OUTPUT
+          
+          echo "Version: ${VERSION_NAME}"
+          echo "Release tag: ${RELEASE_TAG}"
       
       - name: Decode keystore (if exists)
         id: decode_keystore
@@ -164,31 +194,49 @@ jobs:
       
       - name: Rename APK
         run: |
-          VERSION=${{ steps.version.outputs.version }}
+          RELEASE_TAG=${{ steps.version.outputs.release_tag }}
           if [ -f app/build/outputs/apk/release/app-release.apk ]; then
-            mv app/build/outputs/apk/release/app-release.apk aether-${VERSION}.apk
+            mv app/build/outputs/apk/release/app-release.apk aether-${RELEASE_TAG}.apk
           else
-            mv app/build/outputs/apk/release/app-release-unsigned.apk aether-${VERSION}-unsigned.apk
+            mv app/build/outputs/apk/release/app-release-unsigned.apk aether-${RELEASE_TAG}-unsigned.apk
           fi
       
       - name: Generate changelog
         id: changelog
         run: |
           VERSION=${{ steps.version.outputs.version }}
+          RELEASE_TAG=${{ steps.version.outputs.release_tag }}
+          COMMIT_SHORT=${{ steps.version.outputs.commit_short }}
           
-          # Extract changelog section for this version from CHANGELOG.md if it exists
+          # Start release notes
+          echo "## Aether Live Wallpaper ${RELEASE_TAG}" > release-notes.md
+          echo "" >> release-notes.md
+          echo "_ZeroVer: Your software's 0ver. We're never done!_ 🎉" >> release-notes.md
+          echo "" >> release-notes.md
+          
+          # Add build info
+          echo "**Build Information:**" >> release-notes.md
+          echo "- Version: \`${VERSION}\`" >> release-notes.md
+          echo "- Build: \`${RELEASE_TAG}\`" >> release-notes.md
+          echo "- Commit: \`${COMMIT_SHORT}\`" >> release-notes.md
+          echo "- Branch: \`${GITHUB_REF#refs/heads/}\`" >> release-notes.md
+          echo "" >> release-notes.md
+          
+          # Extract changelog section from CHANGELOG.md if it exists
           if [ -f CHANGELOG.md ]; then
-            sed -n "/## \[${VERSION}\]/,/## \[/p" CHANGELOG.md | head -n -1 > release-notes.md
+            sed -n "/## \[${VERSION}\]/,/## \[/p" CHANGELOG.md | head -n -1 >> release-notes.md
           fi
           
-          # If no changelog found, generate from git commits since last tag
-          if [ ! -s release-notes.md ]; then
-            echo "## What's Changed" > release-notes.md
+          # If no changelog found, generate from recent commits
+          if ! grep -q "## " release-notes.md; then
+            echo "## What's Changed" >> release-notes.md
+            echo "" >> release-notes.md
+            # Get commits since last release tag (or last 10 commits if no previous release)
             PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
             if [ -n "$PREV_TAG" ]; then
-              git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%h)" >> release-notes.md
+              git log ${PREV_TAG}..HEAD --pretty=format:"- %s (\`%h\`)" >> release-notes.md
             else
-              git log --pretty=format:"- %s (%h)" -n 20 >> release-notes.md
+              git log --pretty=format:"- %s (\`%h\`)" -n 10 >> release-notes.md
             fi
           fi
           
@@ -197,11 +245,13 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ steps.version.outputs.release_tag }}
+          name: "Aether ${{ steps.version.outputs.release_tag }}"
           files: |
             aether-*.apk
           body_path: release-notes.md
           draft: false
-          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+          prerelease: ${{ contains(steps.version.outputs.version, '-') || github.event_name == 'workflow_dispatch' }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -14,46 +14,84 @@ This document outlines the release process, versioning strategy, and distributio
 
 ## Versioning Scheme
 
-Aether follows **Semantic Versioning 2.0.0** (SemVer) with Android-specific adaptations.
+Aether follows **[ZeroVer (0ver)](https://0ver.org/)** - "Your software's 0ver".
 
-### Format: `MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]`
+> "Software that _actually_ never reaches 1.0.0. Embrace the perpetual beta!"
+
+### The ZeroVer Manifesto 🎉
+
+**Why we'll never reach 1.0.0:**
+- ✨ Software is never "done"—it's always evolving
+- 🚀 Perpetual improvement > artificial milestones
+- 🎨 Creative projects are journeys, not destinations
+- 😄 Takes pressure off "perfect" releases
+- 🔄 Embraces continuous delivery philosophy
+
+**What ZeroVer means for you:**
+- We're **always** shipping new features
+- Updates are **frequent** and **iterative**
+- Breaking changes? Sure! We're still in `0.x.y`
+- **Stability** matters more than version numbers
+- **Quality** over artificial versioning constraints
+
+**Our commitment:**
+> "We'll reach 1.0.0 when particle effects achieve sentience and start filing bug reports about humans."
+
+Until then, enjoy the ride at 0.x.y! 🎢
+
+### Format: `0.MINOR.PATCH[-PRERELEASE][+BUILD]`
 
 **Examples:**
-- `1.0.0` - First stable release
-- `1.2.3` - Stable release with patches
-- `2.0.0-alpha.1` - Alpha prerelease
-- `2.0.0-beta.2` - Beta prerelease
-- `2.0.0-rc.1` - Release candidate
-- `1.2.3+20250117.abc1234` - Build metadata
+- `0.1.0` - Initial release (we're getting started!)
+- `0.5.3` - Still not ready (but getting there!)
+- `0.99.42` - Almost ready (just kidding, never ready)
+- `0.2.1-alpha.3` - Alpha prerelease
+- `0.10.0-beta.2` - Beta prerelease
+- `0.5.3+20250117.abc1234` - Build metadata
+
+### The ZeroVer Philosophy
+
+**Why ZeroVer?**
+- ✅ **Honest:** We're always improving, never "done"
+- ✅ **Flexible:** No pressure to reach mythical 1.0
+- ✅ **Humble:** Software is perpetually evolving
+- ✅ **Humorous:** Takes the pressure off version anxiety
+
+**ZeroVer Rules:**
+1. **MAJOR always stays at 0** (we're never "done"!)
+2. **MINOR increments** for new features or breaking changes
+3. **PATCH increments** for bug fixes
+4. **PRERELEASE tags** for alpha/beta/rc versions
 
 ### Version Components
 
-#### `MAJOR` (Breaking Changes)
+#### `0.` (The Zero)
 
-Increment when making **incompatible API changes** or **major architecture changes**.
+**Never changes.** We embrace perpetual development.
 
-**Examples:**
-- `1.x.x` → `2.0.0`: Complete OpenGL renderer rewrite
-- `2.x.x` → `3.0.0`: Move from GLSL to Vulkan
-- `3.x.x` → `4.0.0`: Change configuration storage format (breaking compatibility)
+**Philosophy:**
+> "Version 1.0.0 is a lie. Software is never finished. Embrace the 0."
 
-#### `MINOR` (New Features)
+#### `MINOR` (Features & Breaking Changes)
 
-Increment when adding **new functionality** in a **backward-compatible manner**.
+Increment when adding **new functionality** or making **breaking changes**.
 
 **Examples:**
-- `1.0.x` → `1.1.0`: Add new particle effect (bubbles)
-- `1.1.x` → `1.2.0`: Add gyroscope parallax support
-- `1.2.x` → `1.3.0`: Add custom shader import feature
+- `0.1.x` → `0.2.0`: Add new particle effect (bubbles)
+- `0.5.x` → `0.6.0`: Add gyroscope parallax support
+- `0.10.x` → `0.11.0`: Complete OpenGL renderer rewrite (yes, even breaking changes!)
+- `0.20.x` → `0.21.0`: Change configuration storage format
+
+**No limits!** We can go to `0.99.0`, `0.150.0`, `0.999.0`... forever!
 
 #### `PATCH` (Bug Fixes)
 
-Increment when making **backward-compatible bug fixes**.
+Increment when making **bug fixes** without adding features.
 
 **Examples:**
-- `1.0.0` → `1.0.1`: Fix memory leak in texture loading
-- `1.0.1` → `1.0.2`: Fix crash on specific devices
-- `1.0.2` → `1.0.3`: Fix shader compilation error on Mali GPUs
+- `0.5.0` → `0.5.1`: Fix memory leak in texture loading
+- `0.5.1` → `0.5.2`: Fix crash on specific devices
+- `0.5.2` → `0.5.3`: Fix shader compilation error on Mali GPUs
 
 #### `PRERELEASE` (Optional)
 
@@ -62,35 +100,35 @@ Used for pre-release versions: `alpha`, `beta`, `rc` (release candidate).
 **Format:** `-alpha.N`, `-beta.N`, `-rc.N`
 
 **Examples:**
-- `2.0.0-alpha.1`: First alpha of version 2.0.0
-- `2.0.0-beta.3`: Third beta of version 2.0.0
-- `2.0.0-rc.1`: Release candidate for 2.0.0
+- `0.5.0-alpha.1`: First alpha of version 0.5.0
+- `0.5.0-beta.3`: Third beta of version 0.5.0
+- `0.5.0-rc.1`: Release candidate for 0.5.0
 
 **Progression:**
 ```
-1.2.3 (current stable)
+0.4.5 (current stable... ish)
   ↓
-2.0.0-alpha.1 (internal testing)
-2.0.0-alpha.2 (internal testing)
+0.5.0-alpha.1 (internal testing)
+0.5.0-alpha.2 (internal testing)
   ↓
-2.0.0-beta.1 (public testing)
-2.0.0-beta.2 (public testing)
+0.5.0-beta.1 (public testing)
+0.5.0-beta.2 (public testing)
   ↓
-2.0.0-rc.1 (release candidate)
-2.0.0-rc.2 (final RC if issues found)
+0.5.0-rc.1 (release candidate)
+0.5.0-rc.2 (final RC if issues found)
   ↓
-2.0.0 (stable release)
+0.5.0 ("stable" release... still 0ver!)
 ```
 
 #### `BUILD` (Optional)
 
 Build metadata for CI/CD: `+YYYYMMDD.COMMIT_HASH`
 
-**Example:** `1.2.3+20250117.abc1234`
+**Example:** `0.5.3+20250117.abc1234`
 
 **Usage:**
 - Automatically appended by GitHub Actions
-- Not used for version precedence (SemVer rule)
+- Not used for version precedence (0ver rule)
 - Useful for debugging and traceability
 
 ---
@@ -111,10 +149,10 @@ Android requires integer `versionCode` for app updates in Google Play Store.
 | `NN`      | 8-9      | BUILD       | `01` = first build |
 
 **Examples:**
-- `1.0.0` → `010000001` (version code: 10,000,001)
-- `1.2.3` → `010200301`
-- `2.0.0` → `020000001`
-- `2.1.5` → `020100501`
+- `0.1.0` → `000100001` (version code: 100,001)
+- `0.5.3` → `000500301`
+- `0.10.0` → `001000001`
+- `0.99.42` → `009904201`
 
 **Maximum Version Code:** `2,147,483,647` (Android's `Integer.MAX_VALUE`)
 
@@ -123,24 +161,23 @@ Android requires integer `versionCode` for app updates in Google Play Store.
 ```kotlin
 android {
     defaultConfig {
-        versionName = "1.2.3"
-        versionCode = 10200301
+        versionName = "0.5.3"
+        versionCode = 500301
     }
 }
 ```
 
-**Automated Calculation (Optional):**
+**Automated Calculation (ZeroVer):**
 ```kotlin
-val majorVersion = 1
-val minorVersion = 2
+// MAJOR is always 0, so we skip it!
+val minorVersion = 5
 val patchVersion = 3
 val buildNumber = 1
 
 android {
     defaultConfig {
-        versionName = "$majorVersion.$minorVersion.$patchVersion"
-        versionCode = majorVersion * 10000000 + 
-                       minorVersion * 100000 + 
+        versionName = "0.$minorVersion.$patchVersion"
+        versionCode = minorVersion * 100000 + 
                        patchVersion * 100 + 
                        buildNumber
     }
@@ -151,133 +188,96 @@ android {
 
 ## Release Types
 
-### 1. Development Builds
+### 1. Feature Branch Builds (Push-Button)
 
-**Branch:** `mvp`, feature branches
-**Versioning:** `0.x.y-alpha.N`
-**Distribution:** GitHub Actions artifacts only
-**Purpose:** Active development, internal testing
+**Branch:** Any feature branch
+**Versioning:** `0.x.y-BRANCHNAME+YYYYMMDD.HASH`
+**Distribution:** GitHub Releases (prerelease) + Artifacts
+**Purpose:** Testing before PR
 
 **Example:**
-- Version: `0.5.0-alpha.12`
-- Version Code: `5012`
+- Version: `0.5.0-feature-new-shader+20251217.abc1234`
+- Version Code: `500001`
+- APK: `aether-0.5.0-feature-new-shader+20251217.abc1234.apk`
+
+**Trigger:**
+- Manual: GitHub Actions UI "Run workflow" button
+- Manual: `gh workflow run build.yml --ref feature/new-shader`
+
+**Artifacts:**
+- APK in GitHub Actions artifacts (7 days)
+- APK in GitHub Releases (prerelease, unlimited)
+- Automatically tagged with build metadata
+
+### 2. Pull Request Builds
+
+**Branch:** Any \u2192 main
+**Versioning:** Current version in `build.gradle.kts`
+**Distribution:** GitHub Actions artifacts only
+**Purpose:** Verify PR builds successfully
+
+**Example:**
 - APK: `app-debug.apk`
 
 **Trigger:**
-- Every push to `mvp` branch
-- Every pull request
+- Automatic on PR creation/update
 
 **Artifacts:**
-- APK uploaded to GitHub Actions artifacts (7-day retention)
-- Not published to GitHub Packages
-- Not tagged in Git
+- APK in GitHub Actions artifacts (7 days)
+- No release created
 
-### 2. Alpha Releases
-
-**Branch:** `mvp`, dedicated alpha branches
-**Versioning:** `X.Y.Z-alpha.N`
-**Distribution:** GitHub Packages
-**Purpose:** Early testing, experimental features
-
-**Example:**
-- Version: `1.0.0-alpha.1`
-- Version Code: `10000001`
-- APK: `aether-1.0.0-alpha.1.apk`
-
-**Trigger:**
-- Manual: Push tag `v1.0.0-alpha.1`
-- Automated: Merge to `release/alpha` branch
-
-**Artifacts:**
-- APK uploaded to GitHub Packages
-- Tagged in Git
-- Release notes on GitHub Releases
-
-**Distribution:**
-- Internal testers via GitHub
-- Not on Google Play Store
-
-### 3. Beta Releases
-
-**Branch:** `release/beta` or `main`
-**Versioning:** `X.Y.Z-beta.N`
-**Distribution:** GitHub Packages + Google Play (Beta track)
-**Purpose:** Public testing, feature complete
-
-**Example:**
-- Version: `1.0.0-beta.2`
-- Version Code: `10000002`
-- APK: `aether-1.0.0-beta.2.apk`
-
-**Trigger:**
-- Manual: Push tag `v1.0.0-beta.2`
-- Automated: Merge to `release/beta` branch
-
-**Artifacts:**
-- Signed APK uploaded to GitHub Packages
-- Tagged in Git
-- Release notes on GitHub Releases
-- Uploaded to Google Play Beta track
-
-**Distribution:**
-- Public testers via Google Play Beta
-- Direct download from GitHub Releases
-
-### 4. Release Candidates (RC)
+### 3. Main Branch Auto-Releases
 
 **Branch:** `main`
-**Versioning:** `X.Y.Z-rc.N`
-**Distribution:** GitHub Packages + Google Play (Internal Testing track)
-**Purpose:** Final testing before stable release
+**Versioning:** `0.x.y+YYYYMMDD.HASH`
+**Distribution:** GitHub Releases (latest) + Artifacts
+**Purpose:** Production releases
 
 **Example:**
-- Version: `1.0.0-rc.1`
-- Version Code: `10000001`
-- APK: `aether-1.0.0-rc.1.apk`
+- Version: `0.5.3+20251217.abc1234`
+- Version Code: `500301`
+- APK: `aether-0.5.3+20251217.abc1234.apk`
 
 **Trigger:**
-- Manual: Push tag `v1.0.0-rc.1`
+- Automatic on push to `main` (e.g., merged PR)
 
 **Artifacts:**
-- Signed APK uploaded to GitHub Packages
-- Tagged in Git
-- Release notes on GitHub Releases
-- Uploaded to Google Play Internal Testing track
+- APK in GitHub Actions artifacts (90 days)
+- APK in GitHub Releases (latest release, unlimited)
+- Automatically tagged with build metadata
+
+**Distribution:**
+- GitHub Releases (public download)
+- Can be uploaded to Google Play Store manually
+
+### 4. Alpha/Beta/RC Releases (Manual)
+
+**Branch:** `main`
+**Versioning:** `0.x.y-alpha.N`, `0.x.y-beta.N`, `0.x.y-rc.N`
+**Distribution:** GitHub Releases + Google Play (testing tracks)
+**Purpose:** Staged testing before production
+
+**Example:**
+- Version: `0.6.0-beta.2`
+- Version Code: `600002`
+- APK: `aether-0.6.0-beta.2.apk`
+
+**Trigger:**
+- Manual workflow dispatch from `main` branch
+- Update version in `build.gradle.kts` to include `-beta.2`
+- Run workflow
+
+**Artifacts:**
+- Signed APK (if keystore configured)
+- GitHub Release (marked as prerelease)
+- Can be uploaded to Google Play testing tracks
 
 **Acceptance Criteria:**
 - All tests pass (unit + instrumentation)
 - No critical bugs
-- Performance meets targets (60 FPS on reference devices)
-- Security review complete
-- Documentation complete
+- Performance acceptable (60 FPS on reference devices)
 
-### 5. Stable Releases
-
-**Branch:** `main`
-**Versioning:** `X.Y.Z`
-**Distribution:** Google Play Store (Production track)
-**Purpose:** Public release
-
-**Example:**
-- Version: `1.0.0`
-- Version Code: `10000001`
-- APK: `aether-1.0.0.apk`
-
-**Trigger:**
-- Manual: Push tag `v1.0.0`
-
-**Artifacts:**
-- Signed APK uploaded to GitHub Packages
-- Tagged in Git
-- Release notes on GitHub Releases
-- Uploaded to Google Play Production track
-
-**Acceptance Criteria:**
-- RC tested for at least 7 days
-- No critical or high-severity bugs
-- Positive feedback from beta testers
-- All documentation updated
-- Marketing materials ready
+**Note:** With ZeroVer, we embrace perpetual beta status. The difference between \"beta\" and \"stable\" is mostly semantic. We're always improving!
 
 ---
 
@@ -285,121 +285,118 @@ android {
 
 ### Step-by-Step Release Process
 
-#### 1. Prepare Release Branch
+#### 1. Prepare Release (Optional Version Bump)
 
+**For feature branch push-button build:**
 ```bash
-# For beta or stable release, create release branch from main
-git checkout main
-git pull origin main
-git checkout -b release/1.0.0
+# No preparation needed! Just click "Run workflow" in GitHub Actions
+# Or use CLI:
+gh workflow run build.yml --ref feature/your-feature
+```
 
-# Update version in build.gradle.kts
+**For main branch release (after PR merge):**
+```bash
+# If you want to bump version before merge:
+git checkout feature/your-feature
+
+# Update version in build.gradle.kts (ZeroVer style)
 # Edit app/build.gradle.kts:
-#   versionName = "1.0.0"
-#   versionCode = 10000001
+#   versionName = "0.6.0"  # Bump minor for new features
+#   versionCode = 600001   # Calculate: 6 * 100000 + 0 * 100 + 1
 
 # Commit version bump
 git add app/build.gradle.kts
-git commit -m "chore: bump version to 1.0.0"
-git push origin release/1.0.0
+git commit -m "chore: bump version to 0.6.0 for new shader effects"
+git push origin feature/your-feature
+
+# Then merge PR to main, which auto-creates release
 ```
 
-#### 2. Run Final Tests
+#### 2. Test Your Feature Branch
 
+**Push-button build for testing:**
 ```bash
-# Local tests
+# On your feature branch
+git checkout feature/new-shader
+
+# Ensure tests pass locally (optional but recommended)
 ./gradlew test
-./gradlew connectedAndroidTest  # Requires emulator
 
-# Or wait for GitHub Actions to run tests automatically
+# Trigger push-button build via GitHub UI:
+# 1. Go to GitHub → Actions → "Android Build and Release"
+# 2. Click "Run workflow"
+# 3. Select branch: feature/new-shader
+# 4. Check "Create GitHub Release?" (default: yes)
+# 5. Click "Run workflow"
+
+# Or via CLI:
+gh workflow run build.yml --ref feature/new-shader
+
+# Wait 3-5 minutes, then download APK from:
+# - Releases tab (prerelease)
+# - Actions artifacts
 ```
 
-#### 3. Create Git Tag
+#### 3. Install and Test APK
 
 ```bash
-# Create annotated tag
-git tag -a v1.0.0 -m "Release version 1.0.0
+# Download APK from GitHub Release
+gh release download 0.5.0-feature-new-shader+20251217.abc1234 \
+  --pattern '*.apk'
 
-Features:
-- GPU-accelerated particle effects
-- Customizable background images
-- Gyroscope parallax support
-- 5 built-in shader effects
+# Install on device
+adb install -r aether-*.apk
 
-Bug Fixes:
-- Fixed memory leak in texture manager
-- Fixed crash on Mali GPUs
-"
-
-# Push tag to GitHub
-git push origin v1.0.0
+# Test the feature!
 ```
 
-#### 4. GitHub Actions Builds Release
-
-Once tag is pushed, GitHub Actions automatically:
-1. Checks out code at tag
-2. Runs all tests
-3. Builds signed release APK
-4. Uploads APK to GitHub Packages
-5. Creates GitHub Release with APK attached
-6. Uploads APK to Google Play Store (if configured)
-
-#### 5. Create GitHub Release
-
-**Option 1: Automated (Recommended)**
-- GitHub Actions creates release automatically from tag
-- Release notes generated from tag message and commit history
-
-**Option 2: Manual**
-1. Go to GitHub repo → Releases → "Draft a new release"
-2. Select tag: `v1.0.0`
-3. Release title: `Aether Live Wallpaper v1.0.0`
-4. Release notes:
-   ```markdown
-   ## 🎉 Features
-   - GPU-accelerated particle effects
-   - Customizable background images
-   - Gyroscope parallax support
-   - 5 built-in shader effects (snow, rain, bubbles, dust, smoke)
-
-   ## 🐛 Bug Fixes
-   - Fixed memory leak in texture manager
-   - Fixed crash on Mali GPUs
-   - Fixed shader compilation on Adreno 5xx
-
-   ## 📦 Downloads
-   - [aether-1.0.0.apk](link) (8.2 MB)
-
-   ## 🔧 Minimum Requirements
-   - Android 8.0 (API 26) or later
-   - OpenGL ES 2.0 support
-   ```
-5. Attach APK: `aether-1.0.0.apk`
-6. Click "Publish release"
-
-#### 6. Merge Release Branch to Main
+#### 4. Create Pull Request
 
 ```bash
+# If everything works, create PR to main
+gh pr create \
+  --title "feat: add new shader effect" \
+  --body "Implements new shader effect as specified in #123"
+```
+
+#### 5. Merge to Main (Auto-Release!)
+
+```bash
+# After PR approval, merge to main
+# GitHub automatically:
+# 1. Runs tests
+# 2. Builds release APK
+# 3. Creates GitHub Release with tag: 0.5.0+20251217.abc1234
+# 4. Uploads APK to release
+
+# No manual steps needed!
+```
+
+#### 6. Verify Release
+
+```bash
+# Check GitHub Releases tab
+# Download and test production APK
+gh release download latest --pattern '*.apk'
+adb install -r aether-*.apk
+```
+
+#### 7. Bump Version (When Ready)
+
+```bash
+# When enough features accumulated, bump minor version
 git checkout main
-git merge release/1.0.0
-git push origin main
-```
+git pull
 
-#### 7. Update Development Version
-
-```bash
-# Immediately after release, bump to next development version
-git checkout mvp
-git merge main
-
-# Update build.gradle.kts for next version
-#   versionName = "1.1.0-alpha"
-#   versionCode = 10100001
+# Edit app/build.gradle.kts:
+#   versionName = "0.6.0"  # Was 0.5.x, now 0.6.0
+#   versionCode = 600001
 
 git add app/build.gradle.kts
-git commit -m "chore: bump version to 1.1.0-alpha for development"
-git push origin mvp
+git commit -m "chore: bump version to 0.6.0"
+git push origin main
+
+# This creates a new release: 0.6.0+20251217.xyz
 ```
 
 ---

@@ -34,13 +34,14 @@ Aether uses **GitHub Actions** for automated building, testing, and releasing. T
 
 ### 1. Pull Request Builds
 
-**Trigger:** Any PR to `main` or `mvp` branches
+**Trigger:** Any PR to `main` branch
 
 **Actions:**
 - Lint check
 - Unit tests
 - Build debug APK
 - Upload APK as artifact (7-day retention)
+- **No release created**
 
 **Purpose:** Verify PR builds successfully before merge
 
@@ -54,60 +55,106 @@ git push origin feature/new-shader
 # GitHub Actions automatically builds and tests
 ```
 
-### 2. Development Builds
+### 2. Feature Branch Push-Button Builds (NEW! 🎉)
 
-**Trigger:** Push to `mvp` branch
+**Trigger:** Manual workflow dispatch from GitHub UI or CLI
 
 **Actions:**
 - Lint check
 - Unit tests
 - Build debug APK
 - Upload APK as artifact (7-day retention)
+- **Create GitHub Release** (prerelease, with branch name)
 
-**Purpose:** Continuous integration during active development
+**Purpose:** Test feature branches before creating PR
+
+**How to trigger:**
+
+**Via GitHub UI:**
+1. Go to repo → Actions tab
+2. Select "Android Build and Release" workflow
+3. Click "Run workflow" dropdown
+4. Select your branch (e.g., `feature/new-shader`)
+5. Check "Create GitHub Release?" (default: yes)
+6. Click "Run workflow"
+7. Wait 3-5 minutes
+8. Download APK from Release or Artifacts
+
+**Via GitHub CLI:**
+```bash
+# From your feature branch
+gh workflow run build.yml --ref feature/new-shader
+
+# Or with specific inputs
+gh workflow run build.yml \
+  --ref feature/new-shader \
+  -f create_release=true
+```
+
+**Result:**
+- Release created: `0.5.0-feature-new-shader+20251217.abc1234`
+- APK: `aether-0.5.0-feature-new-shader+20251217.abc1234.apk`
+- Marked as "prerelease" (not production)
+
+### 3. Main Branch Auto-Release (NEW! 🎉)
+
+**Trigger:** Push to `main` branch (e.g., merged PR)
+
+**Actions:**
+- Lint check
+- Unit tests
+- Build release APK
+- Upload APK as artifact (90-day retention)
+- **Automatically create GitHub Release**
+
+**Purpose:** Production releases, automatic deployment
 
 **Example:**
 ```bash
-# Push to mvp
-git checkout mvp
+# Merge PR to main
+git checkout main
 git merge feature/new-shader
-git push origin mvp
-# GitHub Actions builds automatically
+git push origin main
+# GitHub Actions automatically builds and creates release!
 ```
 
-### 3. Main Branch Builds
+**Result:**
+- Release created: `0.5.0+20251217.abc1234`
+- APK: `aether-0.5.0+20251217.abc1234.apk`
+- Marked as "latest release" (production)
 
-**Trigger:** Push to `main` branch
+### 4. Manual Builds Without Release
 
-**Actions:**
-- Lint check
-- Unit tests
-- Build release APK (unsigned)
-- Upload APK as artifact (30-day retention)
-
-**Purpose:** Integration testing, pre-release validation
-
-### 4. Tagged Releases
-
-**Trigger:** Push tag matching `v*` (e.g., `v1.0.0`, `v2.1.3-beta.1`)
+**Trigger:** Manual workflow dispatch with "Create GitHub Release?" = false
 
 **Actions:**
 - Lint check
 - Unit tests
-- Build signed release APK (if keystore configured)
-- Create GitHub Release
-- Upload APK to release
-- Publish to GitHub Packages
+- Build debug APK
+- Upload APK as artifact only (no release)
 
-**Purpose:** Official releases
+**Purpose:** Quick test builds, internal testing
 
-**Example:**
+**How to trigger:**
 ```bash
-# Create release tag
-git tag -a v1.0.0 -m "Release 1.0.0"
-git push origin v1.0.0
-# GitHub Actions creates release automatically
+gh workflow run build.yml \
+  --ref feature/new-shader \
+  -f create_release=false
 ```
+
+**Result:**
+- APK available in Actions artifacts
+- No GitHub Release created
+- Artifact expires in 7 days
+
+### Summary Table
+
+| Trigger | Branch | Builds APK? | Creates Release? | APK Retention |
+|---------|--------|-------------|------------------|---------------|
+| Pull Request | any → main | ✅ Debug | ❌ No | 7 days |
+| Manual (with release) | any | ✅ Debug | ✅ Yes (prerelease) | 7 days + Release |
+| Manual (no release) | any | ✅ Debug | ❌ No | 7 days |
+| Push to main | main | ✅ Release | ✅ Yes (latest) | 90 days + Release |
 
 ### 5. Instrumentation Tests (Optional)
 
