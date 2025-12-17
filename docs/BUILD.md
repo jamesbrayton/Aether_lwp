@@ -146,20 +146,57 @@ cd Aether_lwp
 
 The Android Emulator on M-series Macs is **significantly faster** than on Intel Macs.
 
-```bash
-# Create ARM64 emulator (recommended for M-series)
-# In Android Studio:
-# Tools → Device Manager → Create Device
+**Step-by-Step Setup:**
 
-# Select a device definition (e.g., Pixel 6)
-# Select System Image: API 34, arm64-v8a (not x86_64!)
-# Name it: "Pixel_6_API_34_ARM"
+1. **Open Android Studio** (if not installed, see setup instructions above)
 
-# Launch emulator
-# Device Manager → Play button next to your device
-```
+2. **Open Device Manager:**
+   - Top menu: **Tools → Device Manager**
+   - Or click the device icon in the toolbar (phone/tablet icon)
+
+3. **Create New Device:**
+   - Click **"Create Device"** button
+   - Or click the **"+"** icon
+
+4. **Select Hardware:**
+   - Choose a device profile: **Pixel 6** (recommended)
+   - Or any device that matches your target screen size
+   - Click **"Next"**
+
+5. **Download System Image (IMPORTANT!):**
+   - **Release Name:** Select **"UpsideDownCake"** (API 34)
+   - **ABI:** Select **"arm64-v8a"** ⚠️ **NOT x86_64!**
+   - If not downloaded, click **"Download"** next to arm64-v8a
+   - Wait for download (500-800 MB)
+   - Click **"Next"**
+
+6. **Configure AVD:**
+   - **AVD Name:** `Pixel_6_API_34_ARM` (or your preference)
+   - **Startup orientation:** Portrait
+   - **Advanced Settings** (optional but recommended):
+     - **RAM:** 4096 MB (4 GB) - More if you have 16GB+ system RAM
+     - **VM heap:** 512 MB
+     - **Internal storage:** 2048 MB
+     - **SD card:** 512 MB
+   - Click **"Finish"**
+
+7. **Launch Emulator:**
+   - Device Manager → Find your device
+   - Click the **▶ (Play)** button
+   - First boot takes 1-2 minutes
+   - Subsequent boots: ~10 seconds
 
 **Performance Tip:** ARM64 emulator images run **3-5x faster** on M-series Macs compared to x86 emulation.
+
+**Verify Emulator Works:**
+```bash
+# In terminal, check connected devices
+adb devices
+# Should show: emulator-5554    device
+
+# Install your APK
+adb install -r path/to/aether-*.apk
+```
 
 #### Known Issues on M-series Mac
 
@@ -497,18 +534,88 @@ echo "org.gradle.configuration-cache=true" >> gradle.properties
 ### Emulator Won't Start
 
 **M-series Mac:**
-```bash
-# Ensure you're using ARM64 system images, not x86_64
-# Device Manager → System Image → arm64-v8a (not x86_64!)
-```
+
+**Symptom:** Emulator crashes on launch or shows black screen
+
+**Solutions:**
+
+1. **Verify ARM64 System Image:**
+   ```bash
+   # Check installed system images
+   $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list_installed | grep system-images
+   
+   # Should see: system-images;android-34;google_apis;arm64-v8a
+   # Should NOT use: system-images;android-34;google_apis;x86_64
+   ```
+
+2. **Enable Hardware Acceleration:**
+   - macOS automatically uses Hypervisor.Framework
+   - No additional setup needed for M-series Macs
+
+3. **Check RAM Allocation:**
+   - Device Manager → Edit Device (pencil icon)
+   - Show Advanced Settings → RAM: 2048-4096 MB
+   - Don't allocate more than 50% of system RAM
+
+4. **Cold Boot:**
+   - Device Manager → More (⋮) → Cold Boot Now
+   - Clears emulator state
+
+5. **Wipe Data:**
+   - Device Manager → More (⋮) → Wipe Data
+   - Starts fresh (loses app installs)
+
+6. **Check Android Emulator Version:**
+   - Android Studio → Preferences → SDK → SDK Tools
+   - Ensure "Android Emulator" is latest version (34.x.x+)
 
 **Intel Mac/Linux/Windows:**
 ```bash
 # Enable hardware acceleration
-# Enable Intel HAXM (Intel Macs)
-# Enable Hyper-V (Windows)
-# Enable KVM (Linux)
+# Intel HAXM (Intel Macs) - Download from Android SDK Manager
+# Hyper-V (Windows) - Enable in Windows Features
+# KVM (Linux) - sudo apt install qemu-kvm
 ```
+
+### "Emulator is Slow" (M-series Mac)
+
+**Symptom:** Emulator runs at 10-15 FPS, laggy animations
+
+**Cause:** Using x86_64 system image (requires Rosetta emulation)
+
+**Solution:**
+1. Delete existing emulator
+2. Create new emulator with **arm64-v8a** system image
+3. Rebuild: Tools → Device Manager → Create Device
+4. Select arm64-v8a (NOT x86_64)
+
+**Result:** Should run at 60 FPS instantly
+
+### "ADB Can't Connect to Emulator"
+
+**Symptom:** `adb devices` shows no devices
+
+**Solutions:**
+
+1. **Restart ADB:**
+   ```bash
+   adb kill-server
+   adb start-server
+   adb devices
+   ```
+
+2. **Check Emulator Port:**
+   ```bash
+   adb devices
+   # Should show: emulator-5554
+   
+   # If not, manually connect
+   adb connect localhost:5554
+   ```
+
+3. **Check Android Studio Emulator:**
+   - Device Manager → Verify emulator shows "Online"
+   - If offline, restart emulator
 
 ---
 
