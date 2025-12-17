@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Aether</string>
+  <string name="wallpaper_name">Aether Live Wallpaper</string>
+  <string name="wallpaper_description">Dynamic particle effects with customizable backgrounds and GPU-accelerated rendering</string>
+
+  <!-- Settings Activity -->
+  <string name="settings_title">Aether Settings</string>
+  <string name="select_background">Select Background</string>
+  <string name="apply_wallpaper">Apply Wallpaper</string>
+  <string name="add_effect">Add Effect</string>
+
+  <!-- Layer Management -->
+  <string name="active_layers">Active Layers</string>
+  <string name="available_effects">Available Effects</string>
+  <string name="layer_opacity">Opacity</string>
+  <string name="layer_enabled">Enabled</string>
+  <string name="delete_layer">Delete</string>
+
+  <!-- Common -->
+  <string name="ok">OK</string>
+  <string name="cancel">Cancel</string>
+  <string name="delete">Delete</string>
+</resources>

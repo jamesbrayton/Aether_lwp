@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+  android:width="108dp"
+  android:height="108dp"
+  android:viewportWidth="108"
+  android:viewportHeight="108">
+  <group
+    android:scaleX="0.5"
+    android:scaleY="0.5"
+    android:translateX="27"
+    android:translateY="27">
+    <!-- Simple geometric logo: overlapping circles representing particle effects -->
+    <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M27,27m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0" />
+    <path
+      android:fillColor="#80FFFFFF"
+      android:pathData="M37,27m-10,0a10,10 0,1 1,20 0a10,10 0,1 1,-20 0" />
+    <path
+      android:fillColor="#60FFFFFF"
+      android:pathData="M32,37m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+  </group>
+</vector>
