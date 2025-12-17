@@ -1,9 +1,149 @@
 ---
 tags: #status_tracking #timeline
-updated: 2025-12-16
+updated: 2025-12-17
 ---
 
 # Implementation Progress Log
+
+## 2025-12-17: Development Environment & CI/CD Complete
+
+### Session 3: Development Workflow Finalization
+
+**Context:**
+- Documentation suite completed (7 new docs)
+- GitHub Actions CI/CD pipeline functional
+- ZeroVer (0ver) versioning adopted
+- Emulator setup issues resolved
+- Clean build workflow validated end-to-end
+
+**Problem Solved: Host Pollution vs Clean Development**
+
+**User Requirement:**
+> "I don't want to change the Java install on my host machine. One of the reasons for using devcontainers is to not pollute my host system with dependencies for one specific project."
+
+**Challenge:**
+- Devcontainer (Linux ARM64) cannot build Android apps (AAPT2 Rosetta issue)
+- Building natively on Mac requires Java 21 installation
+- User wants clean host system (only Android Studio for emulator/ADB)
+
+**Solution: GitHub Actions for All Builds**
+- All builds happen in cloud (GitHub Actions on Ubuntu)
+- Devcontainer used only for code editing/commits
+- Mac hosts only Android Studio (for emulator + ADB)
+- Zero build dependencies on host system ✅
+
+### Validated Workflow
+
+**1. Development (Devcontainer)**
+```bash
+# Edit code in VSCode/Claude Code
+git add .
+git commit -m "feature: implement shader parser"
+git push origin mvp
+```
+
+**2. Build (GitHub Actions)**
+```bash
+# From devcontainer (gh CLI now installed)
+gh workflow run build.yml --ref mvp
+
+# Or trigger via GitHub web UI:
+# Actions → Build → Run workflow
+```
+
+**3. Download APK (Devcontainer)**
+```bash
+gh run list --workflow=build.yml --limit 3
+gh run download --name app-debug
+# Creates app-debug.apk in current directory
+```
+
+**4. Install (Mac - No Build Tools Needed)**
+```bash
+# Only requires ADB (part of Android Studio)
+adb -s emulator-5556 install -r app-debug.apk
+```
+
+### Emulator Issues Resolved
+
+**Root Cause Identified:**
+- Devcontainer's ADB server (PID 98375) was holding port 5037
+- Blocking Mac's native ADB from managing emulators
+- Emulators launched with `-qt-hide-window` flag (hidden)
+
+**Resolution:**
+```bash
+# Kill devcontainer's ADB
+kill -9 98375
+
+# Use Mac's native ADB
+~/Library/Android/sdk/platform-tools/adb start-server
+adb devices
+```
+
+**Emulator Setup Validated:**
+- ARM64 (arm64-v8a) system images confirmed working
+- API 35 emulator created and running successfully
+- ADB connectivity confirmed
+
+### Infrastructure Updates
+
+**Files Modified:**
+1. **`.devcontainer/dockerfile`:**
+   - Added GitHub CLI installation
+   - Enables `gh` commands from devcontainer
+   - No rebuild needed (installed at runtime first)
+
+2. **`.github/workflows/build.yml`:**
+   - Changed debug APK builds from conditional to always
+   - Every workflow run produces `app-debug` artifact
+   - Simplifies download process
+
+### Key Technical Insights
+
+**ADB Port Conflict:**
+- Linux ADB in devcontainer cannot manage Mac emulators
+- Port 5037 conflict causes stuck commands
+- **Solution:** Only use Mac's native ADB for emulator operations
+
+**APK Signing Requirements:**
+- Unsigned APKs (release builds) won't install: `INSTALL_PARSE_FAILED_NO_CERTIFICATES`
+- Debug APKs are auto-signed with debug keystore ✅
+- GitHub Actions produces debug APKs for testing
+
+**Clean Architecture Benefits:**
+- Host system stays clean (no Java, no Gradle, no Android SDK)
+- Only Android Studio needed (for emulator + ADB)
+- All builds reproducible in CI/CD
+- No "works on my machine" issues
+
+### Workflow Validation Success
+
+**Test Sequence Completed:**
+1. ✅ Triggered build via `gh workflow run build.yml --ref mvp`
+2. ✅ Monitored build with `gh run list --workflow=build.yml`
+3. ✅ Downloaded APK with `gh run download --name app-debug`
+4. ✅ Installed to emulator: `adb -s emulator-5556 install -r app-debug.apk`
+5. ✅ App successfully installed and runs on emulator
+
+**Result:** Complete end-to-end workflow validated with zero host pollution ✅
+
+### Documentation Updates Needed
+
+**BUILD.md:**
+- Add section on ADB port conflicts (devcontainer vs Mac)
+- Document `gh run download` workflow
+- Clarify debug vs unsigned APKs
+
+**DEVELOPMENT_HANDOFF.md:**
+- Update with GitHub Actions download steps
+- Add troubleshooting for ADB conflicts
+
+**CI_CD.md:**
+- Document `gh` CLI workflow triggers
+- Add artifact download examples
+
+---
 
 ## 2025-12-16: Phase 1 Design & Planning Session
 
@@ -352,11 +492,14 @@ Adding shader (no rebuild):
 
 ## Upcoming Milestones
 
-### Milestone 0: Plan Approval (Current)
-- [x] User clarification questions answered
-- [x] Embedded metadata design approved
-- [x] Phase 1 plan finalized
-- [ ] **User approval to begin implementation** ← NEXT
+### Milestone 0: Infrastructure Complete ✅
+- [x] Documentation suite created (7 docs)
+- [x] GitHub Actions CI/CD pipeline functional
+- [x] ZeroVer (0ver) versioning adopted
+- [x] Push-button builds validated
+- [x] Emulator setup working
+- [x] Clean build workflow validated (devcontainer + GitHub Actions)
+- [x] **Ready to begin Phase 1 implementation** ✅
 
 ### Milestone 1: Project Setup (Estimated: 1 day)
 - [ ] Android project structure created
@@ -366,7 +509,7 @@ Adding shader (no rebuild):
 - [ ] Test infrastructure validated
 - [ ] `assets/shaders/` directory created
 
-### Milestone 2: Metadata System (Estimated: 2 days) **[NEW]**
+### Milestone 2: Metadata System (Estimated: 2 days)
 - [ ] ShaderMetadataParser implemented
 - [ ] All parser tests passing (10+ tests)
 - [ ] ShaderRegistry implemented
@@ -404,11 +547,12 @@ Adding shader (no rebuild):
 
 ---
 
-## Next Actions (Pending User Approval)
+## Next Actions
 
-**Immediate:**
-1. Wait for user approval of updated plan
-2. Address any final questions or concerns
+**Immediate (User Decision):**
+- Review Memory Bank updates
+- Review documentation updates needed
+- Approve to begin Phase 1 implementation
 
 **Upon Approval:**
 1. Create Android project structure
@@ -441,19 +585,26 @@ Adding shader (no rebuild):
 4. **Standard contracts simplify:** Uniform requirements reduce complexity
 5. **Dynamic UI powerful:** Generate controls from metadata = zero hardcoding
 
+### Workflow Architecture
+1. **Separation of concerns:** Code editing (devcontainer) vs building (CI/CD) vs testing (emulator)
+2. **Clean host system:** Only emulator/ADB on Mac, no build dependencies
+3. **Reproducible builds:** GitHub Actions eliminates "works on my machine"
+4. **ADB architecture:** Linux ADB in devcontainer cannot manage Mac emulators (port conflict)
+
 ### Extensibility Achievement
 **Goal:** "Easy to add new shaders"  
-**Solution:** Embedded metadata + dynamic discovery  
-**Result:** 0 code changes to add shader ✅
+**Solution:** Embedded metadata + dynamic discovery + GitHub Actions builds  
+**Result:** 0 code changes + 0 host pollution ✅
 
 This positions the project for:
 - Community shader contributions
 - User-imported custom effects
 - Shader marketplace/library
 - Rapid experimentation and iteration
+- Clean development environment
 
 ---
 
-**Status:** Planning complete, awaiting user approval to begin Phase 1 implementation
+**Status:** Infrastructure complete, ready to begin Phase 1 implementation
 
 **Next Update:** After project setup complete (Milestone 1)
