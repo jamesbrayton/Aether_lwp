@@ -318,7 +318,8 @@ class ShaderMetadataParserTest {
 
         val metadataComment = parser.extractMetadataComment(shaderSource)
 
-        assertTrue(metadataComment.contains("@shader Test"))
+        assertNotNull(metadataComment)
+        assertTrue(metadataComment!!.contains("@shader Test"))
         assertTrue(metadataComment.contains("@id test"))
         assertTrue(metadataComment.contains("@version 1.0.0"))
     }

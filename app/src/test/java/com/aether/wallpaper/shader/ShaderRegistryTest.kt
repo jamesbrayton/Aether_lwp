@@ -2,20 +2,19 @@ package com.aether.wallpaper.shader
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
- * Integration tests for ShaderRegistry.
+ * Unit tests for ShaderRegistry using Robolectric.
  * Tests shader discovery from assets/shaders/ directory.
- *
- * These are instrumentation tests (not unit tests) because they require
- * Android Context to access assets.
  */
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28])
 class ShaderRegistryTest {
 
     private lateinit var context: Context
