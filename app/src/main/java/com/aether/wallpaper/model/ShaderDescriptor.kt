@@ -3,22 +3,12 @@ package com.aether.wallpaper.model
 /**
  * Complete descriptor for a shader effect, parsed from embedded metadata.
  *
- * Metadata is embedded in GLSL shader files using JavaDoc-style comments:
- * ```
- * /**
- *  * @shader Falling Snow
- *  * @id snow
- *  * @version 1.0.0
- *  * @author Aether Team
- *  * @source https://github.com/aetherteam/aether-lwp-shaders
- *  * @license MIT
- *  * @description Gentle falling snow with lateral drift
- *  * @tags winter, weather, particles
- *  * @minOpenGL 2.0
- *  *
- *  * @param u_speed float 1.0 min=0.1 max=3.0 step=0.1 name="Fall Speed"
- *  * (end of comment block)
- * ```
+ * Metadata is embedded in GLSL shader files using JavaDoc-style comment blocks
+ * at the top of the file. See test.frag for a complete example.
+ *
+ * Required tags: @shader, @id, @version
+ * Optional tags: @author, @source, @license, @description, @tags, @minOpenGL
+ * Parameter definitions: @param name type default min=X max=Y step=Z name="Display" desc="Help"
  *
  * @property id Unique identifier for the shader (e.g., "snow", "rain")
  * @property name Display name shown in UI (e.g., "Falling Snow")

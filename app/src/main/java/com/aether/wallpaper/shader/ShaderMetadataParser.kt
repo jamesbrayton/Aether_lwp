@@ -7,25 +7,14 @@ import com.aether.wallpaper.model.ShaderDescriptor
 /**
  * Parses shader metadata from JavaDoc-style comments embedded in GLSL shader files.
  *
- * Expected metadata format:
- * ```
- * /**
- *  * @shader Display Name
- *  * @id unique_identifier
- *  * @version 1.0.0
- *  * @author Author Name (optional)
- *  * @source https://github.com/repo (optional)
- *  * @license MIT (optional)
- *  * @description Long description (optional)
- *  * @tags tag1, tag2, tag3 (optional)
- *  * @minOpenGL 2.0 (optional, defaults to 2.0)
- *  *
- *  * @param u_name type default min=X max=Y step=Z name="Display" desc="Description"
- *  * (end of comment block)
- * ```
+ * Metadata format uses JavaDoc-style comment blocks at the top of .frag files.
+ * See test.frag in assets/shaders/ for a complete example.
  *
  * Required tags: @shader, @id, @version
- * Optional tags: @author, @source, @license, @description, @tags, @minOpenGL, @param
+ * Optional tags: @author, @source, @license, @description, @tags, @minOpenGL
+ * Parameter format: @param name type default min=X max=Y step=Z name="Display" desc="Help"
+ *
+ * Supported parameter types: float, int, bool, color, vec2, vec3, vec4
  */
 class ShaderMetadataParser {
 
