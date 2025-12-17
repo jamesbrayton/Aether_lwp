@@ -1,0 +1,317 @@
+name: Android Build and Release
+
+on:
+  # Manual trigger for feature branches (push-button builds)
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create GitHub Release?'
+        required: false
+        type: boolean
+        default: true
+  
+  # Auto-build and release on main branch
+  push:
+    branches:
+      - main
+  
+  # Test builds for PRs (no release)
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for version info
+      
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+      
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+      
+      - name: Extract version info
+        id: version
+        run: |
+          # Extract version from build.gradle.kts
+          VERSION_NAME=$(grep "versionName =" app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+          VERSION_CODE=$(grep "versionCode =" app/build.gradle.kts | sed 's/.*= \(.*\)/\1/')
+          
+          # If this is a tag, use tag version
+          if [[ $GITHUB_REF == refs/tags/v* ]]; then
+            VERSION_NAME=${GITHUB_REF#refs/tags/v}
+          fi
+          
+          # Add build metadata
+          COMMIT_SHORT=$(git rev-parse --short HEAD)
+          BUILD_DATE=$(date +%Y%m%d)
+          VERSION_FULL="${VERSION_NAME}+${BUILD_DATE}.${COMMIT_SHORT}"
+          
+          echo "version_name=${VERSION_NAME}" >> $GITHUB_OUTPUT
+          echo "version_code=${VERSION_CODE}" >> $GITHUB_OUTPUT
+          echo "version_full=${VERSION_FULL}" >> $GITHUB_OUTPUT
+          echo "commit_short=${COMMIT_SHORT}" >> $GITHUB_OUTPUT
+          
+          echo "Version: ${VERSION_FULL} (code: ${VERSION_CODE})"
+      
+      - name: Run lint
+        run: ./gradlew lint
+        continue-on-error: true  # Don't fail build on lint warnings
+      
+      - name: Run unit tests
+        run: ./gradlew test
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: app/build/test-results/
+          retention-days: 7
+      
+      - name: Upload lint results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-results
+          path: app/build/reports/lint-results-*.html
+          retention-days: 7
+      
+      - name: Build debug APK
+        run: ./gradlew assembleDebug
+      
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+      
+      - name: Build release APK
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: ./gradlew assembleRelease
+      
+      - name: Upload release APK
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: app/build/outputs/apk/release/app-release*.apk
+          retention-days: 90
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    # Create release on main push or manual trigger (with create_release=true)
+    if: |
+      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
+    needs: build
+    
+    permissions:
+      contents: write
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+      
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+      
+      - name: Extract version info
+        id: version
+        run: |
+          # Extract version from build.gradle.kts
+          VERSION_NAME=$(grep "versionName =" app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+          VERSION_CODE=$(grep "versionCode =" app/build.gradle.kts | sed 's/.*= \(.*\)/\1/')
+          
+          # Generate release tag from version + date + commit
+          COMMIT_SHORT=$(git rev-parse --short HEAD)
+          BUILD_DATE=$(date +%Y%m%d)
+          RELEASE_TAG="${VERSION_NAME}+${BUILD_DATE}.${COMMIT_SHORT}"
+          
+          # For manual builds, include branch name
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//-/g')
+            RELEASE_TAG="${VERSION_NAME}-${BRANCH_NAME}+${BUILD_DATE}.${COMMIT_SHORT}"
+          fi
+          
+          echo "version=${VERSION_NAME}" >> $GITHUB_OUTPUT
+          echo "version_code=${VERSION_CODE}" >> $GITHUB_OUTPUT
+          echo "release_tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+          echo "commit_short=${COMMIT_SHORT}" >> $GITHUB_OUTPUT
+          
+          echo "Version: ${VERSION_NAME}"
+          echo "Release tag: ${RELEASE_TAG}"
+      
+      - name: Decode keystore (if exists)
+        id: decode_keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > keystore.jks
+            echo "keystore_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "keystore_exists=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Build signed release APK
+        if: steps.decode_keystore.outputs.keystore_exists == 'true'
+        env:
+          KEYSTORE_FILE: keystore.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=$KEYSTORE_FILE \
+            -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
+            -Pandroid.injected.signing.key.password=$KEY_PASSWORD
+      
+      - name: Build unsigned release APK (fallback)
+        if: steps.decode_keystore.outputs.keystore_exists != 'true'
+        run: ./gradlew assembleRelease
+      
+      - name: Rename APK
+        run: |
+          RELEASE_TAG=${{ steps.version.outputs.release_tag }}
+          if [ -f app/build/outputs/apk/release/app-release.apk ]; then
+            mv app/build/outputs/apk/release/app-release.apk aether-${RELEASE_TAG}.apk
+          else
+            mv app/build/outputs/apk/release/app-release-unsigned.apk aether-${RELEASE_TAG}-unsigned.apk
+          fi
+      
+      - name: Generate changelog
+        id: changelog
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          RELEASE_TAG=${{ steps.version.outputs.release_tag }}
+          COMMIT_SHORT=${{ steps.version.outputs.commit_short }}
+          
+          # Start release notes
+          echo "## Aether Live Wallpaper ${RELEASE_TAG}" > release-notes.md
+          echo "" >> release-notes.md
+          echo "_ZeroVer: Your software's 0ver. We're never done!_ 🎉" >> release-notes.md
+          echo "" >> release-notes.md
+          
+          # Add build info
+          echo "**Build Information:**" >> release-notes.md
+          echo "- Version: \`${VERSION}\`" >> release-notes.md
+          echo "- Build: \`${RELEASE_TAG}\`" >> release-notes.md
+          echo "- Commit: \`${COMMIT_SHORT}\`" >> release-notes.md
+          echo "- Branch: \`${GITHUB_REF#refs/heads/}\`" >> release-notes.md
+          echo "" >> release-notes.md
+          
+          # Extract changelog section from CHANGELOG.md if it exists
+          if [ -f CHANGELOG.md ]; then
+            sed -n "/## \[${VERSION}\]/,/## \[/p" CHANGELOG.md | head -n -1 >> release-notes.md
+          fi
+          
+          # If no changelog found, generate from recent commits
+          if ! grep -q "## " release-notes.md; then
+            echo "## What's Changed" >> release-notes.md
+            echo "" >> release-notes.md
+            # Get commits since last release tag (or last 10 commits if no previous release)
+            PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+            if [ -n "$PREV_TAG" ]; then
+              git log ${PREV_TAG}..HEAD --pretty=format:"- %s (\`%h\`)" >> release-notes.md
+            else
+              git log --pretty=format:"- %s (\`%h\`)" -n 10 >> release-notes.md
+            fi
+          fi
+          
+          cat release-notes.md
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.release_tag }}
+          name: "Aether ${{ steps.version.outputs.release_tag }}"
+          files: |
+            aether-*.apk
+          body_path: release-notes.md
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, '-') || github.event_name == 'workflow_dispatch' }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Publish to GitHub Packages
+        if: steps.decode_keystore.outputs.keystore_exists == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          ./gradlew publish \
+            -Pandroid.injected.signing.store.file=keystore.jks \
+            -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
+            -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
+            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+      
+      - name: Clean up keystore
+        if: always() && steps.decode_keystore.outputs.keystore_exists == 'true'
+        run: rm -f keystore.jks
+
+  instrumentation-tests:
+    name: Instrumentation Tests
+    runs-on: macos-latest  # macOS for better emulator performance
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    
+    strategy:
+      matrix:
+        api-level: [26, 30, 34]
+        target: [google_apis]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+      
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+      
+      - name: Run instrumentation tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
+          arch: x86_64
+          profile: pixel_6
+          script: ./gradlew connectedAndroidTest
+      
+      - name: Upload instrumentation test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumentation-test-results-api${{ matrix.api-level }}
+          path: app/build/outputs/androidTest-results/
+          retention-days: 7

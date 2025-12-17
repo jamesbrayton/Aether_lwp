@@ -28,3 +28,33 @@ replay_pid*
 
 # Environment variables
 .env
+
+# Core dumps
+core
+core.*
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android
+*.apk
+*.ap_
+*.aab
+*.dex
+local.properties
+.idea/
+*.iml
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+google-services.json
+
+# Claude Code
+.claude/
+.mcp.json
+
+# Memory Bank (keep in repo)
+# .memoryBank/

@@ -17,7 +17,7 @@ ARG USERNAME=developer
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install base system dependencies
-RUN apt update && apt install -y \
+RUN apt-get update && apt-get install -y \
     curl \
     wget \
     unzip \
@@ -28,8 +28,16 @@ RUN apt update && apt install -y \
     software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
+# Install GitHub CLI
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg && \
+    chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
+    apt-get update && \
+    apt-get install -y gh && \
+    rm -rf /var/lib/apt/lists/*
+
 # Install additional useful tools and Android emulator dependencies
-RUN apt update && apt install -y \
+RUN apt-get update && apt-get install -y \
     vim \
     nano \
     htop \
@@ -44,11 +52,25 @@ RUN apt update && apt install -y \
     libasound2t64 \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Python 3 and pip for MCP servers
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    && rm -rf /var/lib/apt/lists/* && \
+    ln -s /usr/bin/python3 /usr/bin/python
+
+# Install Node.js (LTS) for MCP servers and npx
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
+    apt-get update && apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/* && \
+    npm install -g npm@latest
+
 # Install Java 21 (Eclipse Temurin from Adoptium)
 RUN wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor -o /usr/share/keyrings/adoptium-archive-keyring.gpg && \
     echo "deb [signed-by=/usr/share/keyrings/adoptium-archive-keyring.gpg] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list && \
-    apt update && \
-    apt install -y temurin-21-jdk && \
+    apt-get update && \
+    apt-get install -y temurin-21-jdk && \
     rm -rf /var/lib/apt/lists/*
 
 # Create a standard java-21 symlink and configure JAVA_HOME
@@ -109,11 +131,8 @@ RUN wget -q https://github.com/JetBrains/kotlin/releases/download/v${KOTLIN_VERS
     rm kotlin-compiler-${KOTLIN_VERSION}.zip
 ENV PATH=$PATH:/opt/kotlinc/bin
 
-# Install ClaudeCode CLI (optional)
-RUN curl -fsSL https://install.claude.ai | sh
-
 # Install ZSH and oh-my-zsh
-RUN apt update && apt install -y \
+RUN apt-get update && apt-get install -y \
     zsh \
     fonts-powerline \
     locales \
@@ -138,11 +157,17 @@ WORKDIR /home/$USERNAME
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended && \
     sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="agnoster"/g' /home/$USERNAME/.zshrc
 
+# Install ClaudeCode CLI as developer user
+RUN curl -fsSL https://claude.ai/install.sh | bash
+
+# Install uv (modern Python package manager) as developer user for uvx
+RUN curl -LsSf https://astral.sh/uv/install.sh | bash
+
 # Set up environment variables in .zshrc
 RUN echo "export JAVA_HOME=$JAVA_HOME" >> /home/$USERNAME/.zshrc && \
     echo "export ANDROID_HOME=$ANDROID_HOME" >> /home/$USERNAME/.zshrc && \
     echo "export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> /home/$USERNAME/.zshrc && \
-    echo "export PATH=$PATH" >> /home/$USERNAME/.zshrc
+    echo "export PATH=$PATH:\$HOME/.local/bin:\$HOME/.cargo/bin" >> /home/$USERNAME/.zshrc
 
 # Set working directory
 WORKDIR /workspace
