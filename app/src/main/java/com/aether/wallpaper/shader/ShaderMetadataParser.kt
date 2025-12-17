@@ -84,7 +84,7 @@ class ShaderMetadataParser {
 
     /**
      * Extracts the JavaDoc-style metadata comment block from shader source.
-     * Returns the content between /** and *\/ at the start of the file.
+     * Returns the content between the opening and closing comment markers.
      */
     fun extractMetadataComment(shaderSource: String): String? {
         val regex = Regex("""/\*\*(.*?)\*/""", RegexOption.DOT_MATCHES_ALL)
