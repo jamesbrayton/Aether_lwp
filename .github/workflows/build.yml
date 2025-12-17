@@ -169,10 +169,15 @@ jobs:
       
       - name: Decode keystore (if exists)
         id: decode_keystore
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
-          echo "keystore_exists=true" >> $GITHUB_OUTPUT
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > keystore.jks
+            echo "keystore_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "keystore_exists=false" >> $GITHUB_OUTPUT
+          fi
       
       - name: Build signed release APK
         if: steps.decode_keystore.outputs.keystore_exists == 'true'
