@@ -16,6 +16,13 @@ Welcome to the Aether Live Wallpaper documentation! This directory contains comp
   - Emulator setup
   - Troubleshooting build issues
 
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Cheat sheet for push-button builds ⭐ **NEW**
+  - Trigger builds from any branch
+  - Download APKs from releases
+  - Common workflows
+  - GitHub CLI commands
+  - Bash aliases
+
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute to the project
   - Code of conduct
   - Development workflow (TDD)
@@ -58,7 +65,10 @@ Welcome to the Aether Live Wallpaper documentation! This directory contains comp
 
 ## 🚀 Quick Links by Task
 
-### "I want to build the app"
+### "I want to test my feature branch"
+→ [QUICK_REFERENCE.md](QUICK_REFERENCE.md) - Push-button builds! ⭐ **NEW**
+
+### "I want to build the app locally"
 → [BUILD.md](BUILD.md) - Choose your platform and follow instructions
 
 ### "I want to contribute code"
@@ -68,7 +78,7 @@ Welcome to the Aether Live Wallpaper documentation! This directory contains comp
 → [DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md) - Use GitHub Actions for builds!
 
 ### "I want to make a release"
-→ [RELEASE.md](RELEASE.md) - Versioning and release steps
+→ [RELEASE.md](RELEASE.md) - ZeroVer and release automation ⭐ **UPDATED**
 
 ### "I want to set up CI/CD"
 → [CI_CD.md](CI_CD.md) - GitHub Actions configuration
