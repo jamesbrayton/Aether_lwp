@@ -21,7 +21,7 @@ import com.aether.wallpaper.model.ShaderDescriptor
  *  * @minOpenGL 2.0 (optional, defaults to 2.0)
  *  *
  *  * @param u_name type default min=X max=Y step=Z name="Display" desc="Description"
- *  *\/
+ *  * (end of comment block)
  * ```
  *
  * Required tags: @shader, @id, @version

@@ -17,7 +17,7 @@ package com.aether.wallpaper.model
  *  * @minOpenGL 2.0
  *  *
  *  * @param u_speed float 1.0 min=0.1 max=3.0 step=0.1 name="Fall Speed"
- *  *\/
+ *  * (end of comment block)
  * ```
  *
  * @property id Unique identifier for the shader (e.g., "snow", "rain")
