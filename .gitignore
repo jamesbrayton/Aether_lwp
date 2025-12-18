@@ -52,9 +52,9 @@ captures/
 .cxx/
 google-services.json
 
-# Claude Code
-.claude/
-.mcp.json
+# Claude Code (keep in repo)
+#.claude/
+#.mcp.json
 
 # Memory Bank (keep in repo)
 # .memoryBank/
