@@ -2,106 +2,47 @@ package com.aether.wallpaper.renderer
 
 import android.content.Context
 import android.opengl.GLES20
-import android.opengl.GLSurfaceView
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.aether.wallpaper.GLTestContext
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.opengles.GL10
 
 /**
  * Instrumentation tests for GLRenderer.
  *
  * These tests require an OpenGL ES 2.0 context and must run on a device or emulator.
+ * Uses direct EGL context creation (via GLTestContext) for reliable headless testing.
  */
 @RunWith(AndroidJUnit4::class)
 class GLRendererTest {
 
     private lateinit var context: Context
-    private lateinit var glSurfaceView: GLSurfaceView
+    private lateinit var glContext: GLTestContext
     private var testRenderer: GLRenderer? = null
 
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
-        glSurfaceView = GLSurfaceView(context)
-        glSurfaceView.setEGLContextClientVersion(2)
-        // Preserve EGL context when paused (required for testing)
-        glSurfaceView.preserveEGLContextOnPause = true
-        // Set explicit size to trigger surface creation
-        glSurfaceView.holder.setFixedSize(1080, 1920)
+        glContext = GLTestContext()
     }
 
     @After
     fun tearDown() {
         testRenderer?.release()
         testRenderer = null
+        glContext.destroy()
     }
 
     /**
      * Execute code on the GL thread with a valid OpenGL context.
+     * This is now synchronous and runs on the test thread with EGL context made current.
      */
     private fun runOnGLThread(block: () -> Unit) {
-        val latch = CountDownLatch(1)
-        var exception: Exception? = null
-        var surfaceReady = false
-
-        // Use WHEN_DIRTY mode so we control when rendering happens
-        glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
-        
-        glSurfaceView.setRenderer(object : GLSurfaceView.Renderer {
-            override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-                // Surface is now ready
-                surfaceReady = true
-            }
-
-            override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {}
-            override fun onDrawFrame(gl: GL10?) {}
-        })
-        
-        // Manually trigger GL thread start
-        glSurfaceView.onResume()
-        
-        // Request a render to trigger surface creation
-        glSurfaceView.requestRender()
-        
-        // Wait for surface to be ready
-        var waitTime = 0
-        while (!surfaceReady && waitTime < 5000) {
-            Thread.sleep(100)
-            waitTime += 100
-        }
-        
-        if (!surfaceReady) {
-            fail("GL surface did not initialize in time")
-        }
-        
-        // Now queue the actual test on the GL thread
-        glSurfaceView.queueEvent {
-            try {
-                block()
-            } catch (e: Exception) {
-                exception = e
-            } finally {
-                latch.countDown()
-            }
-        }
-
-        assertTrue(
-            "GL thread did not complete in time",
-            latch.await(30, TimeUnit.SECONDS)
-        )
-        
-        // Clean up GL thread
-        glSurfaceView.onPause()
-
-        exception?.let { throw it }
+        glContext.runOnGLThread(block)
     }
 
     @Test
