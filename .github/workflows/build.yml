@@ -264,15 +264,15 @@ jobs:
 
   instrumentation-tests:
     name: Instrumentation Tests
-    runs-on: macos-latest  # macOS for better emulator performance
+    runs-on: macos-13  # Intel macOS for x86_64 emulator support
     # Run on PRs to main (required for merge approval)
     if: github.event_name == 'pull_request'
     
     strategy:
       matrix:
         api-level: [26, 30, 34]
-        target: [default]
-        arch: [arm64-v8a]
+        target: [google_apis]
+        arch: [x86_64]
     
     steps:
       - name: Checkout code
@@ -305,7 +305,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.arch }}
+          key: avd-macos13-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.arch }}
       
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
