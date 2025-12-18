@@ -5,7 +5,155 @@ updated: 2025-12-18
 
 # Implementation Progress Log
 
+## 2025-12-18: Devcontainer Architecture Explicitly Set to x86_64
+
+### Session 5: Container Platform Clarification & Documentation Updates
+
+**Context:**
+- User questioned what was configuring devcontainer for ARM
+- Investigation revealed no explicit architecture specification
+- Docker on M-series Macs defaults to ARM64 containers
+- Confusion caused by misleading Java path name (`temurin-21-jdk-amd64`)
+- ARM_DEVELOPMENT.md discusses native Mac development, not devcontainer
+
+**Problem Identified:**
+- Devcontainer had NO explicit platform specification
+- Default behavior: matches host architecture (ARM64 on M-series Macs)
+- Java/Android SDK tools expect x86_64 architecture
+- Hardcoded path `/usr/lib/jvm/temurin-21-jdk-amd64` misleading (Adoptium names directory "amd64" on both architectures)
+
+**Solution Implemented:**
+
+**1. Explicit x86_64 Platform Specification**
+- Added `--platform=linux/amd64` to Dockerfile `FROM` statement
+- Added `"options": ["--platform=linux/amd64"]` to devcontainer.json build config
+- Container now explicitly runs as x86_64 on ALL host architectures
+- Rosetta 2 handles ARM translation on M-series Macs (external to container)
+
+**Files Modified:**
+1. **`.devcontainer/dockerfile`** (Line 3):
+   ```dockerfile
+   # Force x86_64 architecture for Java/Android SDK compatibility
+   # Rosetta 2 handles ARM translation on M-series Macs
+   FROM --platform=linux/amd64 ubuntu:noble
+   ```
+
+2. **`.devcontainer/devcontainer.json`** (Build section):
+   ```json
+   "build": {
+     "dockerfile": "dockerfile",
+     "context": "..",
+     "args": {
+       "USERNAME": "developer"
+     },
+     "options": [
+       "--platform=linux/amd64"
+     ]
+   }
+   ```
+
+**2. Documentation Updates**
+
+Updated documentation to reflect explicit x86_64 architecture:
+
+1. **`CLAUDE.md`** (Lines 9-17):
+   - Added container architecture note
+   - Clarified Java path is symlink `/usr/lib/jvm/java-21` (not hardcoded amd64)
+   - Added "On M-series Macs, Rosetta 2 handles ARM translation transparently"
+
+2. **`README.md`** (Lines 43-52):
+   - Marked "Build Environment Limitation" as ✅ RESOLVED
+   - Added resolution note with date (2025-12-18)
+   - Updated next steps to remove resolved build issues
+
+3. **`docs/README.md`** (Lines 110-114):
+   - Changed "Key Challenge" to "Previous Challenge: ~~ARM architecture limitations~~"
+   - Added "✅ RESOLVED" status
+   - Added resolution note with date
+   - Clarified devcontainer now runs as x86_64
+
+4. **Memory Bank (`activeContext.md`)**:
+   - Added detailed devcontainer architecture clarification section
+   - Documented root cause (no platform specification)
+   - Documented solution and rationale
+   - Updated container architecture insights
+   - Updated known constraints
+
+**Rationale:**
+- Java/Android SDK dependencies require x86_64 architecture
+- Explicit platform specification prevents ambiguity
+- Rosetta translation happens transparently (no performance impact for code editing)
+- GitHub Actions builds remain x86_64 (consistent with devcontainer)
+- Clean separation: devcontainer (x86_64) → build (x86_64) → test (ARM64 emulator)
+
+**Result:** 
+- Container architecture now **explicitly x86_64** ✅
+- Rosetta handles translation on M-series Macs (external to container) ✅
+- Documentation accurate and reflects reality ✅
+- No confusion about architecture compatibility ✅
+
+### Technical Details
+
+**Investigation Process:**
+1. Searched codebase for ARM/x86/platform references
+2. Found NO explicit platform specification in Dockerfile or devcontainer.json
+3. Identified hardcoded path `/usr/lib/jvm/temurin-21-jdk-amd64` (misleading naming)
+4. Reviewed Memory Bank (ARM_DEVELOPMENT.md about native Mac, not devcontainer)
+5. Determined Docker defaults to host architecture without explicit specification
+
+**Files NOT Modified (Already Correct):**
+- `.github/workflows/build.yml` - Already specifies x86_64 for CI/CD ✅
+- `docs/ARM_DEVELOPMENT.md` - Correctly documents native Mac development (not devcontainer)
+- `docs/BUILD.md` - Discusses platform-specific native development (not devcontainer)
+- `docs/DEVELOPMENT_HANDOFF.md` - Workflow guide (not architecture-specific)
+
+**Verification:**
+- All documentation now consistently describes devcontainer as x86_64
+- ARM_DEVELOPMENT.md scope clarified (native Mac only, not devcontainer)
+- Memory Bank updated with complete architecture context
+- Future developers will have clear understanding of container platform
+
+### Memory Bank Synchronization
+
+**Files Updated:**
+1. **activeContext.md** - Added complete devcontainer architecture section with root cause, solution, rationale
+2. **progress.md** - This entry
+
+**No Changes Needed:**
+- projectBrief.md (high-level vision, not architecture-specific)
+- architecture-decisions.md (already has ADRs, no new ADR needed for clarification)
+- phase1-plan.md (implementation plan, not infrastructure configuration)
+
+### Impact
+
+**Development Workflow:**
+- No changes to existing workflow (still uses GitHub Actions for builds)
+- Devcontainer rebuild will now explicitly pull x86_64 base image
+- Rosetta translation on M-series Macs happens automatically
+
+**Build Consistency:**
+- Devcontainer: x86_64
+- GitHub Actions: x86_64
+- No platform mismatches or surprises
+
+**Documentation Clarity:**
+- All references to devcontainer now accurate
+- Clear distinction: devcontainer (x86_64) vs native Mac development (ARM64)
+- ARM_DEVELOPMENT.md scope explicit (native Mac only)
+
+### Success Criteria Met
+
+- ✅ Container explicitly configured as x86_64
+- ✅ Documentation updated across all files
+- ✅ Memory Bank synchronized
+- ✅ Architecture ambiguity eliminated
+- ✅ Future developers have clear understanding
+
+---
+
 ## 2025-12-18: Phase 1 Component #7 Complete - Snow Shader Effect
+
+## 2025-12-17: Phase 1 Component #2 Complete - ShaderMetadataParser & Registry
 
 ### Session 9: Snow Shader Implementation
 
@@ -430,6 +578,13 @@ git push
 2. **Instrumentation tests:** Real OpenGL context (shader compilation, rendering)
 3. **PR validation:** Run expensive tests (instrumentation) only on PRs
 4. **Feature branches:** Run fast tests (unit + lint) on every push
+
+### Container Architecture (NEW - 2025-12-18)
+1. **Explicit platform specification crucial:** Docker defaults to host architecture
+2. **Rosetta translation transparent:** x86_64 containers work on M-series Macs
+3. **Documentation accuracy matters:** Misleading path names cause confusion
+4. **Distinguish devcontainer vs native development:** Different architectures, different purposes
+5. **Memory Bank synchronization essential:** Keep documentation consistent with reality
 
 ### Extensibility Achievement
 **Goal:** "Easy to add new shaders"  

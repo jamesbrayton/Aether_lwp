@@ -107,9 +107,11 @@ Welcome to the Aether Live Wallpaper documentation! This directory contains comp
 
 ## 📱 Development on M-series Macs
 
-**Key Challenge:** ARM architecture limitations with Android build tools.
+**Previous Challenge:** ~~ARM architecture limitations with Android build tools.~~ ✅ RESOLVED
 
-**Solution:** Hybrid workflow leveraging multiple tools:
+**Solution (2025-12-18):** Devcontainer now runs as **x86_64** (`--platform=linux/amd64`). Rosetta 2 handles translation.
+
+**Hybrid workflow leveraging multiple tools:**
 
 | Task | Tool | Why |
 |------|------|-----|

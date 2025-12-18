@@ -11,9 +11,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Environment
 
 This project uses a Docker-based development environment configured in `.devcontainer/`.
+The container runs as **x86_64** (`--platform=linux/amd64`) for Java/Android SDK compatibility.
+On M-series Macs, Rosetta 2 handles ARM translation transparently.
 
 ### Environment Specifications
-- **Java**: JDK 21 (Eclipse Temurin) at `/usr/lib/jvm/temurin-21-jdk-amd64`
+- **Container Architecture**: x86_64 (linux/amd64)
+- **Java**: JDK 21 (Eclipse Temurin) at `/usr/lib/jvm/java-21`
 - **Gradle**: 8.7
 - **Kotlin**: 1.9.23
 - **Android SDK**: API 34, build-tools 34.0.0

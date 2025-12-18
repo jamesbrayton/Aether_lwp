@@ -54,6 +54,13 @@ All builds happen in **GitHub Actions** (zero host pollution):
 | PR to main | ✅ | ✅ | ✅ | ✅ | ❌ |
 | Manual: Run workflow | ✅ | ✅ | ✅ | ❌ | ✅ |
 
+**Update (2025-12-18):** Devcontainer now explicitly runs as **x86_64** (`--platform=linux/amd64`).
+Rosetta 2 handles ARM translation on M-series Macs. Build issues are resolved.
+
+**Previous Error:** `Failed to start AAPT2 process`
+**Previous Cause:** Android build tools expect x86_64 architecture
+**Resolution:** Explicit platform specification in Dockerfile and devcontainer.json
+
 **Creating a Release:**
 1. Go to Actions tab → "Android Build and Release"
 2. Click "Run workflow" → Select `main` branch
@@ -64,15 +71,7 @@ All builds happen in **GitHub Actions** (zero host pollution):
 
 ### Next Components
 
-Remaining Phase 1 components:
-4. ⏳ OpenGL ES Renderer (next)
-5. Configuration System
-6. Texture Manager
-7. Snow Shader Effect
-8. Rain Shader Effect
-9. Settings Activity UI
-10. Image Cropping Integration
-11. Live Wallpaper Service
+Plan Phase 2
 
 ## Development Environment
 

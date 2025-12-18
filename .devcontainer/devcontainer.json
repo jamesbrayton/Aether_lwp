@@ -1,14 +1,17 @@
 {
   "name": "Aether Android Development",
   
-  // Use your custom image
+  // Use your custom image (x86_64 for Java/Android SDK compatibility)
   "build": {
     "dockerfile": "dockerfile",
     "context": "..",
     "args": {
       // Build arguments for Dockerfile
       "USERNAME": "developer"
-    }
+    },
+    "options": [
+      "--platform=linux/amd64"
+    ]
   },
   
   "workspaceFolder": "/workspace",
@@ -59,11 +62,11 @@
         "java.configuration.runtimes": [
           {
             "name": "JavaSE-21",
-            "path": "/usr/lib/jvm/temurin-21-jdk-amd64",
+            "path": "/usr/lib/jvm/java-21",
             "default": true
           }
         ],
-        "java.jdt.ls.java.home": "/usr/lib/jvm/temurin-21-jdk-amd64",
+        "java.jdt.ls.java.home": "/usr/lib/jvm/java-21",
         "files.watcherExclude": {
           "**/build/**": true,
           "**/.gradle/**": true,

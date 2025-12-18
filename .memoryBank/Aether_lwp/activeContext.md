@@ -15,6 +15,161 @@ phase: Phase 1 Complete - Ready for Deployment
 
 ## Latest Development (2025-12-18)
 
+### Devcontainer Architecture Clarification ✅
+
+**Issue:** Ambiguity about container architecture (ARM vs x86_64)
+
+**Root Cause:**
+- Docker on M-series Macs defaults to ARM64 containers unless explicitly specified
+- Adoptium JDK names directory "amd64" even on ARM installations (misleading)
+- ARM_DEVELOPMENT.md discusses native Mac development, not devcontainer architecture
+- Previous configuration had no explicit platform specification
+
+**Solution Implemented:**
+- ✅ Added `--platform=linux/amd64` to Dockerfile `FROM` statement
+- ✅ Added `"options": ["--platform=linux/amd64"]` to devcontainer.json build config
+- ✅ Container now explicitly runs as x86_64 on all host architectures
+- ✅ Rosetta 2 handles translation on M-series Macs (external to container)
+
+**Rationale:**
+- Java/Android SDK dependencies expect x86_64 architecture
+- Explicit platform specification prevents architecture ambiguity
+- Rosetta translation happens transparently (no performance impact for code editing)
+- GitHub Actions builds remain x86_64 (consistent with devcontainer)
+
+**Result:** Container is explicitly x86_64, Rosetta handles ARM translation externally ✅
+
+**Devcontainer:**
+- ✅ JDK 21 (Eclipse Temurin)
+- ✅ Gradle 8.7
+- ✅ Android SDK 34
+- ✅ Kotlin 1.9.23
+- ✅ GitHub CLI (gh)
+- ✅ Git configured
+- ✅ **Explicit x86_64 architecture** (2025-12-18)
+
+**Documentation:**
+- ✅ BUILD.md (comprehensive build instructions)
+- ✅ DEVELOPMENT_HANDOFF.md (IDE workflow guide)
+- ✅ CI_CD.md (GitHub Actions setup)
+- ✅ ARM_DEVELOPMENT.md (M-series Mac guide - native Mac development, NOT devcontainer)
+- ✅ RELEASE.md (ZeroVer strategy)
+- ✅ QUICK_REFERENCE.md (push-button builds)
+- ✅ CONTRIBUTING.md (contribution guide)
+
+**Container Architecture (2025-12-18):**
+- Devcontainer runs as **explicit x86_64** (`--platform=linux/amd64`)
+- Rosetta 2 handles translation on M-series Macs (transparent)
+- Java/Android SDK dependencies work correctly
+- ARM_DEVELOPMENT.md applies to **native Mac development only**, not devcontainer
+
+**Clean Separation:**
+- Code: Devcontainer (portable, reproducible, x86_64)
+- Build: GitHub Actions (cloud, consistent, x86_64)
+- Test: Mac emulator (native performance, ARM64)
+
+### Phase 2 (Deferred)
+- Multi-layer framebuffer compositing
+- 3 additional effects (bubbles, dust, smoke)
+- Gyroscope parallax with depth-based offsets
+- User shader imports (validation, compile test)
+- Drag-and-drop layer reordering UI
+- Performance optimization (FPS throttling, resolution scaling)
+
+### Phase 3+ (Future Vision)
+- Shader marketplace/library
+- Community shader submissions
+- Auto-generated previews
+- Shader version updates
+
+## Development Workflow (Final)
+
+### Iteration Cycle
+```bash
+# 1. Code (Devcontainer - x86_64)
+# ... edit files in VSCode/Claude Code ...
+git add .
+git commit -m "feature: implement shader parser"
+git push origin mvp
+
+# 2. Build (GitHub Actions - x86_64)
+gh workflow run build.yml --ref mvp
+gh run list --workflow=build.yml --limit 3
+
+# 3. Download (Devcontainer)
+gh run download --name app-debug
+
+# 4. Test (Mac Terminal - ARM64 emulator)
+adb -s emulator-5556 install -r app-debug.apk
+adb shell am start -n com.aether.wallpaper/.MainActivity
+```
+
+### TDD Process (Per Component)
+1. Write Gherkin spec in `spec/*.feature`
+2. Write failing unit test
+3. Run tests: `git push` → GitHub Actions runs tests
+4. Implement feature
+5. Run tests: `git push` → GitHub Actions validates
+6. Refactor
+7. Commit + push
+
+### Testing Strategy
+- **Unit Tests:** Robolectric (run in GitHub Actions)
+- **Integration Tests:** Espresso (run in GitHub Actions with emulator)
+- **Manual Testing:** Download APK → install to Mac emulator
+- **Coverage Target:** 80%+
+
+## Shader Metadata System (Core Architecture)
+
+### Format: Embedded JavaDoc-style Comments
+```glsl
+/**
+ * @shader Falling Snow
+ * @id snow
+ * @version 1.0.0
+ * @author Aether Team
+ * @source https://github.com/aetherteam/aether-lwp-shaders
+ * @license MIT
+ * @description Gentle falling snow with lateral drift
+ * @tags winter, weather, particles
+ * @minOpenGL 2.0
+ * 
+ * @param u_particleCount float 100.0 min=10.0 max=200.0 name="Particle Count"
+ * @param u_speed float 1.0 min=0.1 max=3.0 name="Fall Speed"
+ */
+
+precision mediump float;
+
+// REQUIRED: Standard uniforms (all shaders must declare)
+uniform sampler2D u_backgroundTexture;
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform vec2 u_gyroOffset;
+uniform float u_depthValue;
+
+// Effect-specific parameters
+uniform float u_particleCount;
+uniform float u_speed;
+
+void main() {
+    // ... shader code
+}
+```
+
+## Known Constraints & Limitations
+- OpenGL ES 2.0 only (ES 3.0 deferred)
+- Max 3-5 simultaneous layers (performance)
+- Bitmap sampling required for large images (OOM prevention)
+- Continuous rendering impacts battery (mitigate with FPS options)
+- Metadata parser requires strict format adherence
+- **Devcontainer runs as x86_64** (Rosetta handles translation on M-series Macs)
+- Devcontainer cannot build Android apps (AAPT2 issue) → use GitHub Actions
+- Linux ADB cannot manage Mac emulators (port conflict) → use Mac's native ADB
+
+**Key Innovation:** Clean separation of code (devcontainer x86_64), build (CI/CD x86_64), and test (emulator ARM64) enables zero host pollution while maintaining full Android development capabilities.
+
+### Earlier Development (2025-12-17)
+
 ### Phase 1 Completion Summary
 
 **All 5 remaining components implemented in this session:**
@@ -68,6 +223,11 @@ phase: Phase 1 Complete - Ready for Deployment
 - Blue-tinted rain color (RGB: 0.7, 0.8, 1.0) for atmospheric effect
 - 2x faster than snow (default speed 2.0 vs 1.0)
 - Line-segment particles (not circular like snow)
+
+**ADB Architecture:**
+- Linux ADB in devcontainer cannot manage Mac emulators
+- Port 5037 conflict causes stuck commands
+- **Solution:** Only use Mac's native ADB for emulator operations
 
 **Parameters:**
 - `u_particleCount`: float, default 100.0, range 50.0-150.0
