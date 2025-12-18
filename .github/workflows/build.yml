@@ -14,6 +14,8 @@ on:
   push:
     branches:
       - main
+      - phase3
+      - mvp
   
   # Test builds for PRs (no release)
   pull_request:
