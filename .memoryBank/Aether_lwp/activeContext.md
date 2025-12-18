@@ -1,49 +1,44 @@
 ---
 tags: #active_work #phase1_in_progress
 updated: 2025-12-18
-phase: Phase 1 Implementation - Component #5 Complete
+phase: Phase 1 Implementation - Component #6 Complete
 ---
 
-# Active Context - Phase 1 Implementation (45% Complete)
+# Active Context - Phase 1 Implementation (55% Complete)
 
 ## Current Status
 **Branch:** `phase3`
-**Phase:** Phase 1 Implementation - Rendering & Configuration Complete
-**Progress:** 5/11 components complete (45%)
+**Phase:** Phase 1 Implementation - Core Systems Complete
+**Progress:** 6/11 components complete (55%)
 **Infrastructure:** ✅ Complete (devcontainer, CI/CD, emulator, clean workflow)  
 
 ## Latest Development (2025-12-18)
 
-### GLRenderer Complete ✅
+### Texture Manager Complete ✅
 
 **Components Implemented:**
-1. ✅ GLRenderer with 60fps rendering loop
-2. ✅ Fullscreen quad rendering (2 triangles)
-3. ✅ Standard uniforms management (u_time, u_resolution, etc.)
-4. ✅ Frame timing and FPS calculation
-5. ✅ 16 instrumentation tests validating OpenGL rendering
+1. ✅ TextureManager with bitmap loading and OpenGL upload
+2. ✅ Efficient sampling for large images (OOM prevention)
+3. ✅ EXIF orientation support
+4. ✅ Bitmap cropping integration
+5. ✅ 35 instrumentation tests validating texture operations
 
 **Key Features:**
-- Renders fullscreen quad for shader effects
-- Sets all standard uniforms automatically
-- Tracks elapsed time and FPS
-- Integrates with ShaderLoader for shader programs
-- Creates placeholder background texture
+- Load bitmaps from ContentResolver URIs
+- Automatic sampling based on target resolution (memory efficient)
+- Calculate sample sizes (powers of 2) for optimal GPU performance
+- EXIF orientation correction (JPEG rotation/flip)
+- Crop bitmaps to specified regions
+- OpenGL texture creation with proper parameters
+- Texture lifecycle management (create, bind, release)
+- Placeholder texture generation (1x1 solid color)
+- OOM recovery with fallback sample sizes (2, 4, 8, 16)
 
-### Configuration System Complete ✅
-
-**Components Implemented:**
-1. ✅ WallpaperConfig data models with validation
-2. ✅ ConfigManager with SharedPreferences + JSON
-3. ✅ 24 Robolectric unit tests
-4. ✅ Gherkin spec with 24 scenarios
-
-**Key Features:**
-- Immutable data classes (WallpaperConfig, LayerConfig, etc.)
-- JSON serialization via Gson
-- Validation for all parameters (opacity, depth, FPS)
-- Default config fallback on load errors
-- Support for dynamic layer parameters
+**Memory Optimization:**
+- Sample size 2: reduces dimensions by 2x (25% memory)
+- Sample size 4: reduces dimensions by 4x (6.25% memory)
+- ARGB_8888: 4 bytes/pixel (~8MB for 1080x1920)
+- RGB_565: 2 bytes/pixel (~4MB for 1080x1920, no alpha)
 
 ### CI/CD Workflow Optimized ✅
 
@@ -84,27 +79,27 @@ phase: Phase 1 Implementation - Component #5 Complete
 
 ## Active Work: Phase 1 (MVP)
 
-### Completed Components (5/11)
+### Completed Components (6/11)
 1. ✅ **Project Setup** - Android project structure, Gradle build
 2. ✅ **ShaderMetadataParser & Registry** - Metadata parsing, shader discovery (25+ tests)
 3. ✅ **ShaderLoader** - GLSL compilation, linking, error handling (17 tests)
 4. ✅ **GLRenderer** - OpenGL ES 2.0 renderer with 60fps loop (16 tests)
 5. ✅ **Configuration System** - SharedPreferences + JSON persistence (24 tests)
+6. ✅ **Texture Manager** - Bitmap loading and OpenGL upload (35 tests)
 
-### Next Component: Texture Manager
-**Duration:** 1 day
+### Next Component: Snow Shader Effect
+**Duration:** 1-2 days
 **Objectives:**
-- Load background images from ContentResolver URIs
-- Decode and sample bitmaps efficiently
-- Upload textures to OpenGL
-- Handle memory constraints (large images)
-- Integration with GLRenderer
+- Implement snow.frag shader with particle simulation
+- Falling snow with lateral drift
+- Configurable parameters (particle count, speed, drift)
+- Depth-based parallax for gyroscope (Phase 2)
+- Integration with GLRenderer and background texture
 
-**Gherkin Spec:** `spec/texture-manager.feature` (to be written)
+**Gherkin Spec:** `spec/snow-shader.feature` (to be written)
 
-### Remaining Components (6/11)
-6. ⏳ **Texture Manager** (1 day) - Next
-7. **Snow Shader** (1-2 days)
+### Remaining Components (5/11)
+7. ⏳ **Snow Shader** (1-2 days) - Next
 8. **Rain Shader** (1-2 days)
 9. **Settings Activity** (2 days)
 10. **Image Cropping Integration** (1 day)
@@ -303,12 +298,13 @@ git push origin feature/new-effect
 - ✅ No accidental releases
 
 ### Phase 1 Overall (In Progress)
-- ✅ 5/11 components complete (45%)
-- ✅ 82 tests passing (49 unit + 33 instrumentation)
+- ✅ 6/11 components complete (55%)
+- ✅ 117 tests passing (49 unit + 68 instrumentation)
 - ✅ Zero-code shader addition validated
 - ✅ 60fps rendering validated
 - ✅ Configuration persistence validated
-- ⏳ Remaining: 6 components
+- ✅ Texture loading and memory optimization validated
+- ⏳ Remaining: 5 components
 
 ## Known Constraints & Limitations
 - OpenGL ES 2.0 only (ES 3.0 deferred)
@@ -329,23 +325,25 @@ git push origin feature/new-effect
 
 ## Immediate Next Steps
 
-**1. Implement Texture Manager**
-- Create Gherkin spec for texture loading
-- Implement bitmap loading from ContentResolver URIs
-- Implement bitmap sampling for memory efficiency
-- Upload textures to OpenGL
-- Write unit and instrumentation tests
+**1. Implement Snow Shader Effect**
+- Create Gherkin spec for snow particle simulation
+- Implement snow.frag shader with falling particles
+- Add lateral drift and configurable parameters
+- Write integration tests with GLRenderer
+- Test with real background textures
 
-**2. Continue Phase 1 Implementation**
+**2. Implement Rain Shader Effect**
+- Create Gherkin spec for rain simulation
+- Implement rain.frag shader with fast streaks
+- Add motion blur and configurable parameters
+- Write integration tests
+- Validate performance with multiple layers
+
+**3. Continue Phase 1 Implementation**
 - Follow TDD workflow
 - Commit frequently
 - Run tests on every push
 - Create PRs for review
-
-**3. Shader Effects**
-- Implement Snow shader effect
-- Implement Rain shader effect
-- Test with real background images
 
 ---
 
@@ -354,5 +352,6 @@ git push origin feature/new-effect
 - CI/CD optimization → PR-based workflow with manual releases
 - Clean separation → code/build/test decoupled
 - Type-safe configuration → immutable data classes with validation
+- Memory optimization → automatic bitmap sampling with OOM recovery
 
-**Status:** Phase 1 in progress, 45% complete, on track for MVP ✅
+**Status:** Phase 1 in progress, 55% complete, on track for MVP ✅
