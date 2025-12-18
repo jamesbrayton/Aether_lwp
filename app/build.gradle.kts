@@ -67,6 +67,9 @@ dependencies {
     // Configuration persistence
     implementation("com.google.code.gson:gson:2.10.1")
 
+    // Image processing
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
+
     // Image cropping (TODO: Re-enable once JitPack is accessible)
     // implementation("com.github.CanHub:Android-Image-Cropper:4.5.0")
 
