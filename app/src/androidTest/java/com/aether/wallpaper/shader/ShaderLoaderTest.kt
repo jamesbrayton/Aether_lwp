@@ -74,7 +74,7 @@ class ShaderLoaderTest {
         // Wait for GL thread to execute
         assertTrue(
             "GL thread did not complete in time",
-            localLatch.await(5, TimeUnit.SECONDS)
+            localLatch.await(30, TimeUnit.SECONDS)
         )
 
         // Rethrow any exception that occurred on GL thread

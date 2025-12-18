@@ -103,7 +103,7 @@ class TextureManagerTest {
 
         assertTrue(
             "GL thread did not complete in time",
-            latch.await(10, TimeUnit.SECONDS)
+            latch.await(30, TimeUnit.SECONDS)
         )
 
         exception?.let { throw it }

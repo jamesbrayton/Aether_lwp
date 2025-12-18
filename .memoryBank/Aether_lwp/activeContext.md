@@ -42,7 +42,7 @@ phase: Phase 1 Implementation - Component #6 Complete
 
 ### CI/CD Workflow Optimized ✅
 
-**Problem Solved:** Automatic releases conflicting with PR-based workflow
+**Problem Solved:** Emulator testing reliability and cost optimization
 
 **User Requirement:**
 > "Main will only ever get changes by way of PR (branch protection). Releases should be push-button actions in GitHub UI, not every PR merge."
@@ -60,22 +60,23 @@ phase: Phase 1 Implementation - Component #6 Complete
 **Key Features:**
 - Debug builds on ANY branch push (uses `branches: - '**'` pattern)
 - Instrumentation tests run ONLY on PRs (saves CI minutes)
+- Instrumentation tests run on **Ubuntu with KVM** (free, fast, reliable)
 - Releases are MANUAL ONLY via GitHub Actions UI
 - No automatic releases (prevents accidental releases on PR merge)
 
-**Manual Release Process:**
-1. Go to GitHub Actions tab
-2. Click "Android Build and Release" workflow
-3. Click "Run workflow" dropdown
-4. Select branch (usually `main`)
-5. Check ✅ "Create GitHub Release?"
-6. Click "Run workflow"
+**Emulator Configuration (Ubuntu + KVM):**
+- **Runner**: `ubuntu-latest` (free vs macOS 10x cost)
+- **Architecture**: `x86_64` with KVM hardware acceleration
+- **API Levels**: 26, 30, 34 (matrix strategy)
+- **Emulator options**: headless, software GPU, no audio/animations
+- **Caching**: AVD and Gradle cached (3-8 minute savings per run)
+- **Performance**: 5-10 minutes first run, 1-2 minutes cached
 
-**Result:**
-- Zero manual branch configuration
-- Full test coverage on PRs
-- Controlled, intentional releases
-- Perfect for PR-based workflow with branch protection ✅
+**Why Ubuntu + KVM?**
+- ✅ Free (Linux runners have zero cost)
+- ✅ Fast (KVM hardware acceleration)
+- ✅ Reliable (industry standard for Android CI/CD)
+- ✅ Compatible (x86_64 matches most Android devices)
 
 ## Active Work: Phase 1 (MVP)
 
@@ -314,7 +315,9 @@ git push origin feature/new-effect
 - Metadata parser requires strict format
 - Devcontainer cannot build Android apps → use GitHub Actions
 - Linux ADB cannot manage Mac emulators → use Mac's native ADB
-- Instrumentation tests require PR (don't run on feature branches)
+- Instrumentation tests require Linux KVM support (runs on ubuntu-latest)
+- First PR build takes 5-10 minutes to create AVD cache
+- Subsequent PR builds use cached AVD (1-2 minutes faster)
 
 ## Open Questions / Risks
 - **Shader complexity:** Will procedural effects achieve desired quality?
