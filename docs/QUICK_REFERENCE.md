@@ -64,31 +64,41 @@ One-click access to workflow trigger!
 
 ---
 
-## Main Branch Auto-Release
+## Manual Releases Only
 
-**No manual steps needed!** Merging to main automatically:
-1. Runs tests
-2. Builds APK
-3. Creates GitHub Release
-4. Tags with version + date + commit
+**Releases are intentional!** Merging to main does NOT create a release.
 
-**Example:**
+**To create a release:**
+1. Go to Actions tab
+2. Click "Android Build and Release"
+3. Click "Run workflow"
+4. Select branch (usually `main`)
+5. Check ✅ "Create GitHub Release?"
+6. Click "Run workflow"
+
+**Via CLI:**
 ```bash
-# After PR approved
-git checkout main
-git merge feature/new-shader
-git push origin main
+# Manual release from main
+gh workflow run build.yml --ref main
 
-# GitHub Actions automatically creates:
-# Release: 0.5.0+20251217.abc1234
-# APK: aether-0.5.0+20251217.abc1234.apk
+# Manual release from feature branch
+gh workflow run build.yml --ref feature/new-shader
 ```
 
-**Check release:**
+**Result:**
 ```bash
+# Release: 0.5.0+20251218.abc1234
+# APK: aether-0.5.0+20251218.abc1234.apk
+
+# Check releases
 gh release list
 gh release download latest --pattern '*.apk'
 ```
+
+**Why manual?**
+- Main branch is protected (all changes via PR)
+- Prevents accidental releases
+- Better control over what gets released
 
 ---
 
