@@ -2,6 +2,26 @@
 
 This document outlines the release process, versioning strategy, and distribution workflow for Aether Live Wallpaper.
 
+## 🎯 Quick Start: Creating a Release
+
+**All releases are manual** via GitHub Actions UI:
+
+1. Go to repo → **Actions** tab
+2. Click **"Android Build and Release"** workflow
+3. Click **"Run workflow"** dropdown
+4. Select branch (usually `main`)
+5. Keep ✅ **"Create GitHub Release?"** checked
+6. Click **"Run workflow"** button
+7. Wait ~5-7 minutes
+8. Check **Releases** tab for new release
+
+**Why manual?**
+- Main branch is protected (PR-only)
+- Prevents accidental releases on every PR merge
+- Allows intentional, controlled releases
+
+**See [CI/CD.md](CI_CD.md) for complete workflow details.**
+
 ## Table of Contents
 - [Versioning Scheme](#versioning-scheme)
 - [Release Types](#release-types)
