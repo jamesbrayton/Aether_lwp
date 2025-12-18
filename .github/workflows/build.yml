@@ -271,7 +271,8 @@ jobs:
     strategy:
       matrix:
         api-level: [26, 30, 34]
-        target: [google_apis]
+        target: [default]
+        arch: [arm64-v8a]
     
     steps:
       - name: Checkout code
@@ -304,7 +305,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ matrix.api-level }}-${{ matrix.target }}-macos
+          key: avd-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.arch }}
       
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -312,7 +313,7 @@ jobs:
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
-          arch: x86_64
+          arch: ${{ matrix.arch }}
           profile: pixel_6
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
@@ -324,7 +325,7 @@ jobs:
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
-          arch: x86_64
+          arch: ${{ matrix.arch }}
           profile: pixel_6
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
@@ -335,6 +336,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: instrumentation-test-results-api${{ matrix.api-level }}
+          name: instrumentation-test-results-api${{ matrix.api-level }}-${{ matrix.arch }}
           path: app/build/outputs/androidTest-results/
           retention-days: 7
