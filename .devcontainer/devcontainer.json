@@ -6,9 +6,6 @@
   // GitHub: "ghcr.io/YOUR_USERNAME/aether-android-dev:latest"
   "image": "aether-android-dev:latest",
   
-    // Tell DevPod not to rebuild/extend the image - it's already complete
-  "overrideCommand": false,
-  
   "workspaceFolder": "/workspace",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
   

@@ -183,8 +183,4 @@ RUN echo "=== Environment Verification ===" && \
     (echo "\nSDK Manager:" && sdkmanager --list | head -20 || echo "SDK Manager verification skipped")
 
 # Set default shell to ZSH
-SHELL ["/bin/zsh", "-c"]
-
-# Explicit CMD to keep container alive
-# DevPod will exec into this running container
-CMD ["sleep", "infinity"]
+CMD ["/bin/zsh"]
