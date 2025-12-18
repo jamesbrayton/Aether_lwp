@@ -10,13 +10,11 @@ on:
         type: boolean
         default: true
   
-  # Auto-build and release on main branch
+  # Auto-build on any branch push (debug APK always generated)
   push:
     branches:
-      - main
-      - phase3
-      - mvp
-  
+      - '**'
+
   # Test builds for PRs (no release)
   pull_request:
     branches:
