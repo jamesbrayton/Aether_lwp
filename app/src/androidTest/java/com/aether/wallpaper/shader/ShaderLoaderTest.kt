@@ -41,6 +41,8 @@ class ShaderLoaderTest {
         glSurfaceView.setEGLContextClientVersion(2)
         // Preserve EGL context when paused (required for testing)
         glSurfaceView.preserveEGLContextOnPause = true
+        // Set explicit size to trigger surface creation
+        glSurfaceView.holder.setFixedSize(1080, 1920)
     }
 
     @After
@@ -59,6 +61,9 @@ class ShaderLoaderTest {
         var localException: Exception? = null
         var surfaceReady = false
 
+        // Use WHEN_DIRTY mode so we control when rendering happens
+        glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
+        
         glSurfaceView.setRenderer(object : GLSurfaceView.Renderer {
             override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
                 // Surface is now ready
@@ -71,6 +76,9 @@ class ShaderLoaderTest {
         
         // Manually trigger GL thread start
         glSurfaceView.onResume()
+        
+        // Request a render to trigger surface creation
+        glSurfaceView.requestRender()
         
         // Wait for surface to be ready
         var waitTime = 0
