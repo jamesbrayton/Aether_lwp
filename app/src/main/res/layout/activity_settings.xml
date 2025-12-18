@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:orientation="vertical">
+
+  <!-- Toolbar -->
+  <com.google.android.material.appbar.AppBarLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <com.google.android.material.appbar.MaterialToolbar
+      android:id="@+id/toolbar"
+      android:layout_width="match_parent"
+      android:layout_height="?attr/actionBarSize"
+      android:background="?attr/colorPrimary"
+      app:title="Wallpaper Settings"
+      app:titleTextColor="@android:color/white" />
+
+  </com.google.android.material.appbar.AppBarLayout>
+
+  <!-- Scrollable content -->
+  <ScrollView
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1">
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      android:padding="16dp">
+
+      <!-- Background Image Section -->
+      <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        app:cardElevation="4dp"
+        app:cardCornerRadius="8dp">
+
+        <LinearLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:orientation="vertical"
+          android:padding="16dp">
+
+          <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Background Image"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+          <!-- Background preview -->
+          <ImageView
+            android:id="@+id/backgroundPreview"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"
+            android:background="#EEEEEE"
+            android:contentDescription="Background image preview"
+            android:layout_marginBottom="8dp" />
+
+          <Button
+            android:id="@+id/selectBackgroundButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Select Background" />
+
+        </LinearLayout>
+
+      </com.google.android.material.card.MaterialCardView>
+
+      <!-- Available Effects Section -->
+      <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Available Effects"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+      <!-- Effect selector RecyclerView -->
+      <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/effectSelectorRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:nestedScrollingEnabled="false" />
+
+      <!-- Active Layers Section -->
+      <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Active Layers"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+      <!-- Empty state message -->
+      <TextView
+        android:id="@+id/emptyLayersMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No effects added yet"
+        android:textColor="@android:color/darker_gray"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginVertical="16dp"
+        android:visibility="gone" />
+
+      <!-- Active layers RecyclerView -->
+      <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/layersRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:nestedScrollingEnabled="false" />
+
+    </LinearLayout>
+
+  </ScrollView>
+
+  <!-- Apply Wallpaper Button (bottom) -->
+  <Button
+    android:id="@+id/applyWallpaperButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="16dp"
+    android:text="Apply Wallpaper"
+    android:enabled="false" />
+
+</LinearLayout>
