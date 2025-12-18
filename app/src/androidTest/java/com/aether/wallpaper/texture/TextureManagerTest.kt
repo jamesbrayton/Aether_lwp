@@ -87,24 +87,42 @@ class TextureManagerTest {
     private fun runOnGLThread(block: () -> Unit) {
         val latch = CountDownLatch(1)
         var exception: Exception? = null
+        var surfaceReady = false
 
         glSurfaceView.setRenderer(object : GLSurfaceView.Renderer {
             override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-                try {
-                    block()
-                } catch (e: Exception) {
-                    exception = e
-                } finally {
-                    latch.countDown()
-                }
+                // Surface is now ready
+                surfaceReady = true
             }
 
             override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {}
             override fun onDrawFrame(gl: GL10?) {}
         })
         
-        // Manually trigger GL thread start (required when view is not attached to window)
+        // Manually trigger GL thread start
         glSurfaceView.onResume()
+        
+        // Wait for surface to be ready
+        var waitTime = 0
+        while (!surfaceReady && waitTime < 5000) {
+            Thread.sleep(100)
+            waitTime += 100
+        }
+        
+        if (!surfaceReady) {
+            fail("GL surface did not initialize in time")
+        }
+        
+        // Now queue the actual test on the GL thread
+        glSurfaceView.queueEvent {
+            try {
+                block()
+            } catch (e: Exception) {
+                exception = e
+            } finally {
+                latch.countDown()
+            }
+        }
 
         assertTrue(
             "GL thread did not complete in time",

@@ -57,24 +57,42 @@ class ShaderLoaderTest {
     private fun runOnGLThread(block: () -> Unit) {
         val localLatch = CountDownLatch(1)
         var localException: Exception? = null
+        var surfaceReady = false
 
         glSurfaceView.setRenderer(object : GLSurfaceView.Renderer {
             override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-                try {
-                    block()
-                } catch (e: Exception) {
-                    localException = e
-                } finally {
-                    localLatch.countDown()
-                }
+                // Surface is now ready
+                surfaceReady = true
             }
 
             override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {}
             override fun onDrawFrame(gl: GL10?) {}
         })
         
-        // Manually trigger GL thread start (required when view is not attached to window)
+        // Manually trigger GL thread start
         glSurfaceView.onResume()
+        
+        // Wait for surface to be ready
+        var waitTime = 0
+        while (!surfaceReady && waitTime < 5000) {
+            Thread.sleep(100)
+            waitTime += 100
+        }
+        
+        if (!surfaceReady) {
+            fail("GL surface did not initialize in time")
+        }
+        
+        // Now queue the actual test on the GL thread
+        glSurfaceView.queueEvent {
+            try {
+                block()
+            } catch (e: Exception) {
+                localException = e
+            } finally {
+                localLatch.countDown()
+            }
+        }
 
         // Wait for GL thread to execute
         assertTrue(
