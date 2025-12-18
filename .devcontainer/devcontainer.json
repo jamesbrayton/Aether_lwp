@@ -12,7 +12,8 @@
   // Enable USB device access for ADB
   "runArgs": [
     "--device=/dev/bus/usb",
-    "--privileged"
+    "--privileged",
+    "--platform=linux/amd64"
   ],
   
   // Optional: persistent home directory for Gradle cache, etc.
