@@ -51,7 +51,8 @@
         "GitHub.copilot",
         "esbenp.prettier-vscode",
         "DavidAnson.vscode-markdownlint",
-        "GitHub.copilot-chat"
+        "GitHub.copilot-chat",
+        "github.vscode-github-actions"
       ],
       
       "settings": {

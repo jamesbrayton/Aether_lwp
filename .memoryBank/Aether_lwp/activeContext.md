@@ -1,40 +1,165 @@
 ---
-tags: #active_work #infrastructure_complete
-updated: 2025-12-17
-phase: Ready for Phase 1 Implementation
+tags: #active_work #phase1_in_progress
+updated: 2025-12-18
+phase: Phase 1 Implementation - Component #6 Complete
 ---
 
-# Active Context - Infrastructure Complete
+# Active Context - Phase 1 Implementation (55% Complete)
 
 ## Current Status
-**Branch:** `mvp`  
-**Phase:** Infrastructure Complete - Ready to Begin Phase 1 Implementation  
+**Branch:** `phase3`
+**Phase:** Phase 1 Implementation - Core Systems Complete
+**Progress:** 6/11 components complete (55%)
 **Infrastructure:** ✅ Complete (devcontainer, CI/CD, emulator, clean workflow)  
-**Android Project:** Not yet created (next step)  
 
-## Latest Development (2025-12-17)
+## Latest Development (2025-12-18)
 
-### Clean Development Workflow Validated ✅
+### Texture Manager Complete ✅
 
-**Problem Solved:** Host system pollution vs clean development environment
+**Components Implemented:**
+1. ✅ TextureManager with bitmap loading and OpenGL upload
+2. ✅ Efficient sampling for large images (OOM prevention)
+3. ✅ EXIF orientation support
+4. ✅ Bitmap cropping integration
+5. ✅ 35 instrumentation tests validating texture operations
+
+**Key Features:**
+- Load bitmaps from ContentResolver URIs
+- Automatic sampling based on target resolution (memory efficient)
+- Calculate sample sizes (powers of 2) for optimal GPU performance
+- EXIF orientation correction (JPEG rotation/flip)
+- Crop bitmaps to specified regions
+- OpenGL texture creation with proper parameters
+- Texture lifecycle management (create, bind, release)
+- Placeholder texture generation (1x1 solid color)
+- OOM recovery with fallback sample sizes (2, 4, 8, 16)
+
+**Memory Optimization:**
+- Sample size 2: reduces dimensions by 2x (25% memory)
+- Sample size 4: reduces dimensions by 4x (6.25% memory)
+- ARGB_8888: 4 bytes/pixel (~8MB for 1080x1920)
+- RGB_565: 2 bytes/pixel (~4MB for 1080x1920, no alpha)
+
+### CI/CD Workflow Optimized ✅
+
+**Problem Solved:** Emulator testing reliability and cost optimization
 
 **User Requirement:**
-> "I don't want to change the Java install on my host machine. One of the reasons for using devcontainers is to not pollute my host system."
+> "Main will only ever get changes by way of PR (branch protection). Releases should be push-button actions in GitHub UI, not every PR merge."
 
 **Solution Implemented:**
-- **Devcontainer:** Code editing only (VSCode/Claude Code + git)
-- **GitHub Actions:** All builds happen in cloud (Ubuntu runners)
-- **Mac:** Only Android Studio (emulator + ADB, no build tools)
 
-**Validated Workflow:**
-1. Edit code in devcontainer → commit → push
-2. `gh workflow run build.yml --ref mvp` (trigger build from devcontainer)
-3. `gh run download --name app-debug` (download APK artifact)
-4. `adb -s emulator-5556 install -r app-debug.apk` (install on Mac)
+**Workflow Behavior:**
 
-**Result:** Zero host pollution, reproducible builds, end-to-end workflow confirmed ✅
+| Event | Lint | Unit Tests | Debug APK | Instrumentation Tests | Release APK | GitHub Release |
+|-------|------|-----------|-----------|----------------------|-------------|----------------|
+| **Push to any branch** | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **PR to main** | ✅ | ✅ | ✅ | ✅ (API 26, 30, 34) | ❌ | ❌ |
+| **Manual: Run workflow** | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
 
-### Infrastructure Components Complete
+**Key Features:**
+- Debug builds on ANY branch push (uses `branches: - '**'` pattern)
+- Instrumentation tests run ONLY on PRs (saves CI minutes)
+- Instrumentation tests run on **Ubuntu with KVM** (free, fast, reliable)
+- Releases are MANUAL ONLY via GitHub Actions UI
+- No automatic releases (prevents accidental releases on PR merge)
+
+**Emulator Configuration (Ubuntu + KVM):**
+- **Runner**: `ubuntu-latest` (free vs macOS 10x cost)
+- **Architecture**: `x86_64` with KVM hardware acceleration
+- **API Levels**: 26, 30, 34 (matrix strategy)
+- **Emulator options**: headless, software GPU, no audio/animations
+- **Caching**: AVD and Gradle cached (3-8 minute savings per run)
+- **Performance**: 5-10 minutes first run, 1-2 minutes cached
+
+**Why Ubuntu + KVM?**
+- ✅ Free (Linux runners have zero cost)
+- ✅ Fast (KVM hardware acceleration)
+- ✅ Reliable (industry standard for Android CI/CD)
+- ✅ Compatible (x86_64 matches most Android devices)
+
+## Active Work: Phase 1 (MVP)
+
+### Completed Components (6/11)
+1. ✅ **Project Setup** - Android project structure, Gradle build
+2. ✅ **ShaderMetadataParser & Registry** - Metadata parsing, shader discovery (25+ tests)
+3. ✅ **ShaderLoader** - GLSL compilation, linking, error handling (17 tests)
+4. ✅ **GLRenderer** - OpenGL ES 2.0 renderer with 60fps loop (16 tests)
+5. ✅ **Configuration System** - SharedPreferences + JSON persistence (24 tests)
+6. ✅ **Texture Manager** - Bitmap loading and OpenGL upload (35 tests)
+
+### Next Component: Snow Shader Effect
+**Duration:** 1-2 days
+**Objectives:**
+- Implement snow.frag shader with particle simulation
+- Falling snow with lateral drift
+- Configurable parameters (particle count, speed, drift)
+- Depth-based parallax for gyroscope (Phase 2)
+- Integration with GLRenderer and background texture
+
+**Gherkin Spec:** `spec/snow-shader.feature` (to be written)
+
+### Remaining Components (5/11)
+7. ⏳ **Snow Shader** (1-2 days) - Next
+8. **Rain Shader** (1-2 days)
+9. **Settings Activity** (2 days)
+10. **Image Cropping Integration** (1 day)
+11. **Live Wallpaper Service** (2 days)
+
+## Development Workflow (Updated)
+
+### Iteration Cycle
+```bash
+# 1. Code (Devcontainer)
+git checkout -b feature/new-component
+# ... edit files in VSCode/Claude Code ...
+git add .
+git commit -m "feature: implement new component"
+git push origin feature/new-component
+
+# 2. Automatic Build (GitHub Actions)
+# - Triggers automatically on push
+# - Runs lint + unit tests
+# - Builds debug APK
+# - Uploads APK artifact (7 days)
+
+# 3. Create PR
+gh pr create --title "feat: new component" --base main
+
+# 4. PR Build (GitHub Actions)
+# - Runs lint + unit tests
+# - Runs instrumentation tests (API 26, 30, 34)
+# - Builds debug APK
+# - Validates full test suite
+
+# 5. After PR Merge
+# - Main updated
+# - No automatic release
+# - Ready for next feature
+
+# 6. Manual Release (When Ready)
+# - GitHub UI: Actions → Run workflow
+# - Select main branch
+# - Check "Create GitHub Release"
+# - Creates release APK + GitHub release with ZeroVer tag
+```
+
+### TDD Process (Per Component)
+1. Write Gherkin spec in `spec/*.feature`
+2. Write failing tests (unit or instrumentation)
+3. Implement feature
+4. Push to GitHub → automated build runs tests
+5. Refactor while keeping tests green
+6. Create PR → instrumentation tests run
+7. Merge after approval
+
+### Testing Strategy
+- **Unit Tests:** Robolectric (fast, run on every push)
+- **Instrumentation Tests:** Real OpenGL/Android (run on PRs only)
+- **Manual Testing:** Download APK → install to emulator
+- **Coverage Target:** 80%+
+
+## Infrastructure Components
 
 **Devcontainer:**
 - ✅ JDK 21 (Eclipse Temurin)
@@ -46,136 +171,28 @@ phase: Ready for Phase 1 Implementation
 
 **CI/CD (GitHub Actions):**
 - ✅ Workflow file: `.github/workflows/build.yml`
-- ✅ Manual trigger: `workflow_dispatch`
-- ✅ Auto-release: push to `main`
-- ✅ PR testing: pull_request to `main`
-- ✅ Debug APK artifact: `app-debug` (always built)
-- ✅ Lint + unit tests
+- ✅ Auto-build on any branch push: `branches: - '**'`
+- ✅ Instrumentation tests on PRs only
+- ✅ Manual releases via `workflow_dispatch`
+- ✅ Debug APK artifact (always built)
 - ✅ ZeroVer (0ver) versioning
 
 **Documentation:**
-- ✅ BUILD.md (comprehensive build instructions)
-- ✅ DEVELOPMENT_HANDOFF.md (IDE workflow guide)
-- ✅ CI_CD.md (GitHub Actions setup)
+- ✅ BUILD.md (build instructions)
+- ✅ DEVELOPMENT_HANDOFF.md (IDE workflow)
+- ⏳ CI_CD.md (needs update with new workflow)
 - ✅ ARM_DEVELOPMENT.md (M-series Mac guide)
-- ✅ RELEASE.md (ZeroVer strategy)
+- ⏳ RELEASE.md (needs update with manual release process)
 - ✅ QUICK_REFERENCE.md (push-button builds)
 - ✅ CONTRIBUTING.md (contribution guide)
 
 **Emulator:**
 - ✅ ARM64 (arm64-v8a) system image, API 35
-- ✅ Pixel emulator running successfully
-- ✅ ADB connectivity confirmed
+- ✅ Pixel emulator running
+- ✅ ADB connectivity
 - ✅ APK installation validated
 
-### Key Technical Insights
-
-**ADB Architecture:**
-- Linux ADB in devcontainer cannot manage Mac emulators
-- Port 5037 conflict causes stuck commands
-- **Solution:** Only use Mac's native ADB for emulator operations
-
-**APK Signing:**
-- Unsigned APKs won't install (INSTALL_PARSE_FAILED_NO_CERTIFICATES)
-- Debug APKs auto-signed with debug keystore ✅
-- GitHub Actions now produces debug APKs for all builds
-
-**Clean Separation:**
-- Code: Devcontainer (portable, reproducible)
-- Build: GitHub Actions (cloud, consistent)
-- Test: Mac emulator (native performance)
-
-## Active Work: Phase 1 (MVP) - Ready to Begin
-
-### Scope (Confirmed 2025-12-16)
-1. **Language:** Kotlin (null safety, coroutines, modern syntax)
-2. **Package Name:** `com.aether.wallpaper`
-3. **Min SDK:** API 26 (Android 8.0) - 90%+ coverage
-4. **Initial Effects:** 2 effects (Snow, Rain) - validate architecture
-5. **Gyroscope Parallax:** Deferred to Phase 2
-6. **Testing:** Both Robolectric + Instrumentation
-7. **Image Cropping:** Android-Image-Cropper library
-8. **Shader Metadata:** Embedded in GLSL (JavaDoc-style comments)
-9. **Standard Uniforms:** Required for all shaders
-10. **Build Strategy:** GitHub Actions (no local builds)
-
-### Phase 1 Objectives
-✅ Create Android project structure  
-✅ **ShaderMetadataParser & ShaderRegistry** - Core extensibility  
-✅ OpenGL ES 2.0 rendering pipeline  
-✅ Shader loading system with error handling  
-✅ 2 particle effects with **embedded metadata** (snow.frag, rain.frag)  
-✅ **Dynamic Settings UI** - parameter controls auto-generated from metadata  
-✅ Background image selection + cropping  
-✅ Configuration persistence (SharedPreferences + JSON)  
-✅ Live wallpaper service lifecycle  
-✅ Comprehensive test suite (80%+ coverage)  
-
-### Component Order (13-16 days)
-1. **Project Setup** (1 day)
-2. **ShaderMetadataParser & Registry** (2 days) - Core extensibility
-3. **Shader Loading System** (2 days)
-4. **OpenGL ES Renderer** (2 days)
-5. **Configuration System** (1 day)
-6. **Texture Manager** (1 day)
-7. **Snow Shader** (1-2 days) - First effect with metadata
-8. **Rain Shader** (1-2 days) - Second effect with metadata
-9. **Settings Activity** (2 days) - Dynamic UI generation
-10. **Image Cropping Integration** (1 day)
-11. **Live Wallpaper Service** (2 days)
-
-### Phase 2 (Deferred)
-- Multi-layer framebuffer compositing
-- 3 additional effects (bubbles, dust, smoke)
-- Gyroscope parallax with depth-based offsets
-- User shader imports (validation, compile test)
-- Drag-and-drop layer reordering UI
-- Performance optimization (FPS throttling, resolution scaling)
-
-### Phase 3+ (Future Vision)
-- Shader marketplace/library
-- Community shader submissions
-- Auto-generated previews
-- Shader version updates
-
-## Development Workflow (Final)
-
-### Iteration Cycle
-```bash
-# 1. Code (Devcontainer)
-# ... edit files in VSCode/Claude Code ...
-git add .
-git commit -m "feature: implement shader parser"
-git push origin mvp
-
-# 2. Build (GitHub Actions)
-gh workflow run build.yml --ref mvp
-gh run list --workflow=build.yml --limit 3
-
-# 3. Download (Devcontainer)
-gh run download --name app-debug
-
-# 4. Test (Mac Terminal)
-adb -s emulator-5556 install -r app-debug.apk
-adb shell am start -n com.aether.wallpaper/.MainActivity
-```
-
-### TDD Process (Per Component)
-1. Write Gherkin spec in `spec/*.feature`
-2. Write failing unit test
-3. Run tests: `git push` → GitHub Actions runs tests
-4. Implement feature
-5. Run tests: `git push` → GitHub Actions validates
-6. Refactor
-7. Commit + push
-
-### Testing Strategy
-- **Unit Tests:** Robolectric (run in GitHub Actions)
-- **Integration Tests:** Espresso (run in GitHub Actions with emulator)
-- **Manual Testing:** Download APK → install to Mac emulator
-- **Coverage Target:** 80%+
-
-## Shader Metadata System (Core Architecture)
+## Shader Metadata System
 
 ### Format: Embedded JavaDoc-style Comments
 ```glsl
@@ -214,93 +231,130 @@ void main() {
 
 ### Standard Uniform Contract (ADR-011)
 **ALL shaders MUST declare these uniforms:**
-- `uniform sampler2D u_backgroundTexture;` - User's selected background image
-- `uniform float u_time;` - Elapsed time in seconds
-- `uniform vec2 u_resolution;` - Screen resolution (width, height)
-- `uniform vec2 u_gyroOffset;` - Gyroscope offset (Phase 2, zero in Phase 1)
-- `uniform float u_depthValue;` - Layer depth (Phase 2, zero in Phase 1)
+- `uniform sampler2D u_backgroundTexture;` - User's background image
+- `uniform float u_time;` - Animation time in seconds
+- `uniform vec2 u_resolution;` - Screen resolution
+- `uniform vec2 u_gyroOffset;` - Gyroscope offset (Phase 2)
+- `uniform float u_depthValue;` - Layer depth (Phase 2)
 
-**Rationale:**
-- Architectural consistency
-- GPU optimizes away unused uniforms (zero cost)
-- Future-proof for Phase 2 parallax
+**Rationale:** Consistency, GPU optimization, future-proof
 
 ## Developer Experience: Adding New Shaders
 
-**Phase 1 (bundled shaders):**
+**Current Workflow (Phase 1):**
 ```bash
-# 1. Create effect.frag with metadata comments
+# 1. Create shader.frag with metadata
 # 2. Place in assets/shaders/
-# 3. Push to GitHub
-git add app/src/main/assets/shaders/bubbles.frag
-git commit -m "feature: add bubbles shader"
-git push origin mvp
+git add app/src/main/assets/shaders/new-effect.frag
+git commit -m "feature: add new effect shader"
+git push origin feature/new-effect
 
-# 4. Trigger build
-gh workflow run build.yml --ref mvp
+# 3. Automatic build triggered
+# - ShaderRegistry discovers shader
+# - ShaderLoader compiles shader
+# - Tests validate compilation
+# - Debug APK available in artifacts
 
-# 5. Download and test
-gh run download --name app-debug
-adb -s emulator-5556 install -r app-debug.apk
-
-# Effect automatically appears in Settings UI ✅
+# Effect automatically available ✅
 ```
 
-**No code changes needed!**
+**Time: < 5 minutes**  
+**Code changes: 0**
+
+## Key Technical Decisions
+
+### CI/CD Workflow (Updated 2025-12-18)
+- **Pattern:** `branches: - '**'` matches all branches
+- **PR-Only Tests:** Instrumentation tests run on PRs to save CI minutes
+- **Manual Releases:** Via GitHub UI, prevents accidental releases
+- **Branch Protection:** Assumes main requires PR, no direct pushes
+
+### Shader Architecture (Established 2025-12-17)
+- **Metadata:** Embedded in GLSL files (JavaDoc-style)
+- **Discovery:** Runtime scanning of assets/shaders/
+- **Compilation:** Validated with real OpenGL context
+- **Standard Uniforms:** Required for all shaders (no exceptions)
+
+### Build Architecture (Established 2025-12-17)
+- **Code:** Devcontainer (portable environment)
+- **Build:** GitHub Actions (cloud, reproducible)
+- **Test:** Mac emulator (native performance)
+- **Distribution:** APK artifacts (7 days) + GitHub releases (unlimited)
+
+## Success Criteria
+
+### Component #3 (ShaderLoader) ✅ COMPLETE
+- ✅ Load shaders from assets
+- ✅ Compile vertex and fragment shaders
+- ✅ Metadata comments work with GLSL compiler
+- ✅ Link shaders into programs
+- ✅ Detailed error reporting
+- ✅ 17 instrumentation tests passing
+
+### CI/CD Workflow ✅ COMPLETE
+- ✅ Debug builds on any branch
+- ✅ No manual branch configuration
+- ✅ Instrumentation tests on PRs
+- ✅ Manual releases via GitHub UI
+- ✅ No accidental releases
+
+### Phase 1 Overall (In Progress)
+- ✅ 6/11 components complete (55%)
+- ✅ 117 tests passing (49 unit + 68 instrumentation)
+- ✅ Zero-code shader addition validated
+- ✅ 60fps rendering validated
+- ✅ Configuration persistence validated
+- ✅ Texture loading and memory optimization validated
+- ⏳ Remaining: 5 components
 
 ## Known Constraints & Limitations
 - OpenGL ES 2.0 only (ES 3.0 deferred)
 - Max 3-5 simultaneous layers (performance)
 - Bitmap sampling required for large images (OOM prevention)
-- Continuous rendering impacts battery (mitigate with FPS options)
-- Metadata parser requires strict format adherence
-- Devcontainer cannot build Android apps (AAPT2 issue) → use GitHub Actions
-- Linux ADB cannot manage Mac emulators (port conflict) → use Mac's native ADB
+- Continuous rendering impacts battery
+- Metadata parser requires strict format
+- Devcontainer cannot build Android apps → use GitHub Actions
+- Linux ADB cannot manage Mac emulators → use Mac's native ADB
+- Instrumentation tests require Linux KVM support (runs on ubuntu-latest)
+- First PR build takes 5-10 minutes to create AVD cache
+- Subsequent PR builds use cached AVD (1-2 minutes faster)
 
 ## Open Questions / Risks
-- **Shader complexity:** Will procedural snow/rain achieve desired visual quality?
-- **Parser robustness:** Will regex-based parser handle edge cases well?
-- **Performance:** Can we maintain 60fps with 2 layers + dynamic parameters?
-- **GPU compatibility:** Need to test on Qualcomm and Mali GPUs early
-- **Battery:** Need baseline battery metrics from reference wallpapers
-
-## Success Criteria for Extensibility
-- ✅ Add shader in < 5 minutes
-- ✅ 0 code changes needed
-- ✅ 0 host system pollution
-- ✅ UI adapts automatically to new parameters
-- ✅ Settings shows shader name, description, author, license
-- ✅ Reproducible builds in CI/CD
+- **Shader complexity:** Will procedural effects achieve desired quality?
+- **Performance:** Can we maintain 60fps with 2 layers?
+- **GPU compatibility:** Need early testing on Qualcomm/Mali
+- **Battery:** Need baseline metrics from reference wallpapers
+- **Release frequency:** How often should we create releases?
 
 ## Immediate Next Steps
 
-**1. Create Android Project Structure**
-```bash
-# In devcontainer
-mkdir -p app/src/main/java/com/aether/wallpaper
-mkdir -p app/src/main/assets/shaders
-mkdir -p app/src/test/java/com/aether/wallpaper
-mkdir -p app/src/androidTest/java/com/aether/wallpaper
-```
+**1. Implement Snow Shader Effect**
+- Create Gherkin spec for snow particle simulation
+- Implement snow.frag shader with falling particles
+- Add lateral drift and configurable parameters
+- Write integration tests with GLRenderer
+- Test with real background textures
 
-**2. Write First Gherkin Spec**
-```gherkin
-# spec/project-setup.feature
-Feature: Android Project Setup
-  Scenario: Gradle build succeeds
-    Given the Android project structure exists
-    When I run ./gradlew assembleDebug
-    Then the build should succeed
-    And app-debug.apk should be created
-```
+**2. Implement Rain Shader Effect**
+- Create Gherkin spec for rain simulation
+- Implement rain.frag shader with fast streaks
+- Add motion blur and configurable parameters
+- Write integration tests
+- Validate performance with multiple layers
 
-**3. Begin TDD: ShaderMetadataParser**
-- Write failing tests for JavaDoc parsing
-- Implement regex-based parser
-- Validate all @tags extracted correctly
+**3. Continue Phase 1 Implementation**
+- Follow TDD workflow
+- Commit frequently
+- Run tests on every push
+- Create PRs for review
 
 ---
 
-**Key Innovation:** Clean separation of code (devcontainer), build (CI/CD), and test (emulator) enables zero host pollution while maintaining full Android development capabilities.
+**Key Innovation:**
+- Embedded metadata → zero-code shader addition
+- CI/CD optimization → PR-based workflow with manual releases
+- Clean separation → code/build/test decoupled
+- Type-safe configuration → immutable data classes with validation
+- Memory optimization → automatic bitmap sampling with OOM recovery
 
-**Status:** Infrastructure complete, ready to begin Phase 1 implementation ✅
+**Status:** Phase 1 in progress, 55% complete, on track for MVP ✅

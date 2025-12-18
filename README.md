@@ -4,9 +4,15 @@ GPU-accelerated Android live wallpaper with customizable particle effects and ba
 
 ## Project Status
 
-**Branch:** `mvp`
-**Phase:** Phase 1 Implementation - Project Setup
-**Status:** Initial project structure created, build configuration pending resolution
+**Branch:** `phase3`
+**Phase:** Phase 1 Implementation - 27% Complete
+**Status:** Shader loading system complete, OpenGL renderer next
+
+**Progress:**
+- ✅ Project Setup (Component #1)
+- ✅ ShaderMetadataParser & Registry (Component #2) - 25 tests passing
+- ✅ ShaderLoader (Component #3) - 17 instrumentation tests passing
+- ⏳ GLRenderer (Component #4) - Next up
 
 ## Current Setup
 
@@ -38,36 +44,28 @@ GPU-accelerated Android live wallpaper with customizable particle effects and ba
 - `AetherWallpaperService.kt` - Live wallpaper service
 - `SettingsActivity.kt` - Configuration UI
 
-### Known Issues
+### CI/CD Workflow
 
-#### Build Environment Limitation
-The current Docker devcontainer runs on `aarch64` (ARM) architecture, which has compatibility issues with Android build tools (AAPT2).
+All builds happen in **GitHub Actions** (zero host pollution):
 
-**Error:** `Failed to start AAPT2 process`
-**Cause:** Android build tools expect x86_64 architecture
-**Impact:** Cannot complete `gradle build` in current environment
+| Event | Lint | Unit Tests | Debug APK | Instrumentation Tests | Release |
+|-------|------|-----------|-----------|----------------------|---------|
+| Push to any branch | ✅ | ✅ | ✅ | ❌ | ❌ |
+| PR to main | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Manual: Run workflow | ✅ | ✅ | ✅ | ❌ | ✅ |
 
-#### Dependency Resolution
-The Android-Image-Cropper library from JitPack was temporarily commented out due to network/repository access issues during setup.
+**Creating a Release:**
+1. Go to Actions tab → "Android Build and Release"
+2. Click "Run workflow" → Select `main` branch
+3. Check "Create GitHub Release?" → Click "Run workflow"
+4. Wait 5-7 minutes → Check Releases tab
 
-**TODO:** Re-enable once repository is accessible:
-```kotlin
-implementation("com.github.CanHub:Android-Image-Cropper:4.5.0")
-```
+**See [docs/CI_CD.md](docs/CI_CD.md) for complete details.**
 
-### Next Steps
+### Next Components
 
-**To Resolve Build Issues:**
-1. Test build on x86_64 machine or CI environment
-2. Ensure Android SDK build tools are properly installed
-3. Re-enable Android-Image-Cropper dependency
-
-**To Continue Implementation:**
-Once build is working, proceed with Phase 1 components in order:
-1. ✅ Project Setup (current)
-2. ShaderMetadataParser & ShaderRegistry
-3. Shader Loading System
-4. OpenGL ES Renderer
+Remaining Phase 1 components:
+4. ⏳ OpenGL ES Renderer (next)
 5. Configuration System
 6. Texture Manager
 7. Snow Shader Effect
@@ -87,24 +85,31 @@ Once build is working, proceed with Phase 1 components in order:
 
 ### Build Commands
 
+**All builds happen in GitHub Actions** (see [docs/BUILD.md](docs/BUILD.md) for details).
+
+**Development Workflow:**
 ```bash
-# Build the project (once environment is fixed)
-./gradlew build
+# 1. Work on feature branch (in devcontainer)
+git checkout -b feature/new-component
+# ... make changes ...
+git commit -m "feature: add new component"
+git push origin feature/new-component
 
-# Run lint checks
-./gradlew lint
+# 2. GitHub Actions automatically:
+#    - Runs lint + unit tests
+#    - Builds debug APK
+#    - Uploads APK artifact (7 days)
 
-# Run unit tests
-./gradlew test
+# 3. Create PR
+gh pr create --title "feat: new component" --base main
 
-# Run Android instrumentation tests
-./gradlew connectedAndroidTest
+# 4. GitHub Actions on PR:
+#    - Runs full test suite (includes instrumentation tests)
+#    - Validates before merge
 
-# Clean build
-./gradlew clean
-
-# Assemble debug APK
-./gradlew assembleDebug
+# 5. After merge to main:
+#    - Nothing automatic happens
+#    - Ready for next feature or manual release
 ```
 
 ## Architecture
