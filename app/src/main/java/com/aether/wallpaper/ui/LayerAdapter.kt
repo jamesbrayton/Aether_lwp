@@ -9,8 +9,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.aether.wallpaper.R
 import com.aether.wallpaper.model.LayerConfig
-import com.aether.wallpaper.shader.ParameterDefinition
-import com.aether.wallpaper.shader.ParameterType
+import com.aether.wallpaper.model.ParameterDefinition
+import com.aether.wallpaper.model.ParameterType
 import com.aether.wallpaper.shader.ShaderRegistry
 import com.google.android.material.slider.Slider
 import com.google.android.material.switchmaterial.SwitchMaterial

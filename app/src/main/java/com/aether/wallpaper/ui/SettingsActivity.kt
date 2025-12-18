@@ -18,6 +18,7 @@ import com.aether.wallpaper.config.ConfigManager
 import com.aether.wallpaper.model.BackgroundConfig
 import com.aether.wallpaper.model.CropRect
 import com.aether.wallpaper.model.LayerConfig
+import com.aether.wallpaper.model.ShaderDescriptor
 import com.aether.wallpaper.model.WallpaperConfig
 import com.aether.wallpaper.shader.ShaderRegistry
 import com.google.android.material.appbar.MaterialToolbar
@@ -92,9 +93,9 @@ class SettingsActivity : AppCompatActivity() {
     private fun setupRecyclerViews() {
         // Effect selector (available shaders)
         effectSelectorRecyclerView.layoutManager = LinearLayoutManager(this)
-        effectAdapter = EffectSelectorAdapter(shaderRegistry) { shaderDescriptor ->
+        effectAdapter = EffectSelectorAdapter(shaderRegistry, onAddEffect = { shaderDescriptor ->
             onAddEffect(shaderDescriptor.id)
-        }
+        })
         effectSelectorRecyclerView.adapter = effectAdapter
 
         // Active layers
