@@ -70,7 +70,20 @@ class AetherWallpaperService : WallpaperService() {
 
             // Create renderer with configuration
             config?.let {
-                renderer = GLRenderer(this@AetherWallpaperService, it)
+                // Get the first enabled layer's shader, or use test.frag as fallback
+                val firstEnabledLayer = it.layers.firstOrNull { layer -> layer.enabled }
+                val fragmentShaderFile = if (firstEnabledLayer != null) {
+                    val shader = shaderRegistry?.getShaderById(firstEnabledLayer.shaderId)
+                    shader?.fragmentShaderPath ?: "shaders/test.frag"
+                } else {
+                    "shaders/test.frag"
+                }
+
+                renderer = GLRenderer(
+                    this@AetherWallpaperService,
+                    "shaders/vertex_shader.vert",
+                    fragmentShaderFile
+                )
                 glSurfaceView?.setRenderer(renderer)
             }
         }

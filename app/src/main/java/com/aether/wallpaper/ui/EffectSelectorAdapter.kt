@@ -7,7 +7,7 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.aether.wallpaper.R
-import com.aether.wallpaper.shader.ShaderDescriptor
+import com.aether.wallpaper.model.ShaderDescriptor
 import com.aether.wallpaper.shader.ShaderRegistry
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
@@ -63,7 +63,7 @@ class EffectSelectorAdapter(
 
             // Display tags as chips from @tags
             tagsChipGroup.removeAllViews()
-            shader.tags.forEach { tag ->
+            shader.tags.forEach { tag: String ->
                 val chip = Chip(itemView.context)
                 chip.text = tag
                 chip.isClickable = false

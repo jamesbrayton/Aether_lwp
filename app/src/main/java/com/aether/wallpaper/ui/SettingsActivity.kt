@@ -93,7 +93,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun setupRecyclerViews() {
         // Effect selector (available shaders)
         effectSelectorRecyclerView.layoutManager = LinearLayoutManager(this)
-        effectAdapter = EffectSelectorAdapter(shaderRegistry, onAddEffect = { shaderDescriptor ->
+        effectAdapter = EffectSelectorAdapter(shaderRegistry, onAddEffect = { shaderDescriptor: ShaderDescriptor ->
             onAddEffect(shaderDescriptor.id)
         })
         effectSelectorRecyclerView.adapter = effectAdapter
