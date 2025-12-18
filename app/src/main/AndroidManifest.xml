@@ -30,6 +30,13 @@
       </intent-filter>
     </activity>
 
+    <!-- Image Crop Activity -->
+    <activity
+      android:name=".ui.ImageCropActivity"
+      android:exported="false"
+      android:label="Crop Image"
+      android:theme="@style/Theme.Aether" />
+
     <!-- Live Wallpaper Service -->
     <service
       android:name=".AetherWallpaperService"

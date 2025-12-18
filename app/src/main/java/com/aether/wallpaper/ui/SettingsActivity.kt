@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.aether.wallpaper.R
 import com.aether.wallpaper.config.ConfigManager
 import com.aether.wallpaper.model.BackgroundConfig
+import com.aether.wallpaper.model.CropRect
 import com.aether.wallpaper.model.LayerConfig
 import com.aether.wallpaper.model.WallpaperConfig
 import com.aether.wallpaper.shader.ShaderRegistry
@@ -53,6 +54,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private var currentConfig: WallpaperConfig? = null
     private val maxLayers = 5
+    private var tempImageUri: Uri? = null // Temporary storage for image URI during crop flow
 
     companion object {
         private const val REQUEST_SELECT_IMAGE = 1001
@@ -245,12 +247,33 @@ class SettingsActivity : AppCompatActivity() {
                 if (resultCode == RESULT_OK && data != null) {
                     val imageUri: Uri? = data.data
                     imageUri?.let {
-                        // TODO: Launch crop activity in future iteration
-                        // For now, save URI without cropping
+                        // Launch crop activity
+                        val cropIntent = Intent(this, ImageCropActivity::class.java)
+                        cropIntent.putExtra(ImageCropActivity.EXTRA_IMAGE_URI, it.toString())
+                        startActivityForResult(cropIntent, REQUEST_CROP_IMAGE)
+
+                        // Store temporary URI for crop result
+                        tempImageUri = it
+                    }
+                }
+            }
+            REQUEST_CROP_IMAGE -> {
+                if (resultCode == RESULT_OK && data != null) {
+                    // Extract crop coordinates
+                    val cropX = data.getIntExtra(ImageCropActivity.EXTRA_CROP_X, 0)
+                    val cropY = data.getIntExtra(ImageCropActivity.EXTRA_CROP_Y, 0)
+                    val cropWidth = data.getIntExtra(ImageCropActivity.EXTRA_CROP_WIDTH, 0)
+                    val cropHeight = data.getIntExtra(ImageCropActivity.EXTRA_CROP_HEIGHT, 0)
+
+                    // Create CropRect from coordinates
+                    val cropRect = CropRect(cropX, cropY, cropWidth, cropHeight)
+
+                    // Save configuration with crop coordinates
+                    tempImageUri?.let { uri ->
                         val updatedConfig = currentConfig?.copy(
                             background = BackgroundConfig(
-                                uri = it.toString(),
-                                crop = null
+                                uri = uri.toString(),
+                                crop = cropRect
                             )
                         )
                         updatedConfig?.let { config ->
@@ -258,13 +281,12 @@ class SettingsActivity : AppCompatActivity() {
                             currentConfig = config
                         }
 
-                        // Display in preview
-                        backgroundPreview.setImageURI(it)
+                        // Display cropped image in preview
+                        backgroundPreview.setImageURI(uri)
                     }
+
+                    tempImageUri = null
                 }
-            }
-            REQUEST_CROP_IMAGE -> {
-                // TODO: Handle crop result in future iteration
             }
         }
     }
