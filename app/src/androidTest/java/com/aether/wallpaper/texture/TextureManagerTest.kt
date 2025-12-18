@@ -40,6 +40,8 @@ class TextureManagerTest {
         context = ApplicationProvider.getApplicationContext()
         glSurfaceView = GLSurfaceView(context)
         glSurfaceView.setEGLContextClientVersion(2)
+        // Preserve EGL context when paused (required for testing)
+        glSurfaceView.preserveEGLContextOnPause = true
 
         textureManager = TextureManager(context)
 
@@ -100,11 +102,17 @@ class TextureManagerTest {
             override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {}
             override fun onDrawFrame(gl: GL10?) {}
         })
+        
+        // Manually trigger GL thread start (required when view is not attached to window)
+        glSurfaceView.onResume()
 
         assertTrue(
             "GL thread did not complete in time",
             latch.await(30, TimeUnit.SECONDS)
         )
+        
+        // Clean up GL thread
+        glSurfaceView.onPause()
 
         exception?.let { throw it }
     }

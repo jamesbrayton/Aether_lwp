@@ -39,6 +39,8 @@ class ShaderLoaderTest {
         // Create a GLSurfaceView to get an OpenGL context
         glSurfaceView = GLSurfaceView(context)
         glSurfaceView.setEGLContextClientVersion(2)
+        // Preserve EGL context when paused (required for testing)
+        glSurfaceView.preserveEGLContextOnPause = true
     }
 
     @After
@@ -70,12 +72,18 @@ class ShaderLoaderTest {
             override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {}
             override fun onDrawFrame(gl: GL10?) {}
         })
+        
+        // Manually trigger GL thread start (required when view is not attached to window)
+        glSurfaceView.onResume()
 
         // Wait for GL thread to execute
         assertTrue(
             "GL thread did not complete in time",
             localLatch.await(30, TimeUnit.SECONDS)
         )
+        
+        // Clean up GL thread
+        glSurfaceView.onPause()
 
         // Rethrow any exception that occurred on GL thread
         localException?.let { throw it }
