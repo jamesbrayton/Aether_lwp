@@ -4,7 +4,7 @@
     // Use pre-built image (local or from registry)
   // Local: "aether-android-dev:latest"
   // GitHub: "ghcr.io/YOUR_USERNAME/aether-android-dev:latest"
-  "image": "aether-android-dev:latest",
+  "image": "ghcr.io/jamesbrayton/aether_lwp/aether-android-dev:latest",
   
   "workspaceFolder": "/workspace",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",

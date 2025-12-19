@@ -80,7 +80,7 @@ fi
 
 # Build the image
 echo -e "${GREEN}Step 1: Building Docker image...${NC}"
-docker --debug build \
+docker build \
     --platform="${PLATFORM}" \
     -t "${LOCAL_IMAGE}" \
     -f "${DOCKERFILE_PATH}" \
