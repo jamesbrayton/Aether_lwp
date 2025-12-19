@@ -124,9 +124,23 @@ class SettingsActivity : AppCompatActivity() {
             // Load background image if exists
             config.background?.let { background ->
                 try {
-                    backgroundPreview.setImageURI(Uri.parse(background.uri))
+                    val uri = Uri.parse(background.uri)
+                    // Test if we can access the URI before setting it
+                    contentResolver.openInputStream(uri)?.use {
+                        // Stream opened successfully, we have permission
+                        backgroundPreview.setImageURI(uri)
+                    }
+                } catch (e: SecurityException) {
+                    // Permission denied - clear the background from config
+                    android.util.Log.w("SettingsActivity", "Lost permission to background image URI", e)
+                    val updatedConfig = config.copy(background = null)
+                    configManager.saveConfig(updatedConfig)
+                    currentConfig = updatedConfig
+                    backgroundPreview.setImageDrawable(null)
                 } catch (e: Exception) {
-                    // Image loading failed, show placeholder
+                    // Other error loading image
+                    android.util.Log.e("SettingsActivity", "Error loading background image", e)
+                    backgroundPreview.setImageDrawable(null)
                 }
             }
         }
@@ -248,6 +262,17 @@ class SettingsActivity : AppCompatActivity() {
                 if (resultCode == RESULT_OK && data != null) {
                     val imageUri: Uri? = data.data
                     imageUri?.let {
+                        // Request persistent permission for this URI
+                        try {
+                            contentResolver.takePersistableUriPermission(
+                                it,
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            )
+                        } catch (e: SecurityException) {
+                            // Permission not granted - URI may not support persistent permissions
+                            // Continue anyway as we may still have temporary access
+                        }
+
                         // Launch crop activity
                         val cropIntent = Intent(this, ImageCropActivity::class.java)
                         cropIntent.putExtra(ImageCropActivity.EXTRA_IMAGE_URI, it.toString())
