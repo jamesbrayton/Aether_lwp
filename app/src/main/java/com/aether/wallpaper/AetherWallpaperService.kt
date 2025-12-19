@@ -1,6 +1,5 @@
 package com.aether.wallpaper
 
-import android.opengl.GLSurfaceView
 import android.service.wallpaper.WallpaperService
 import android.view.SurfaceHolder
 import com.aether.wallpaper.config.ConfigManager
@@ -19,11 +18,12 @@ import com.aether.wallpaper.shader.ShaderRegistry
  *
  * Lifecycle:
  * 1. System calls onCreateEngine() when wallpaper is set
- * 2. Engine creates GLSurfaceView with OpenGL ES 2.0 context
- * 3. Renderer loads configuration and shaders
- * 4. Rendering loop runs continuously at 60fps
- * 5. Engine pauses/resumes based on visibility
- * 6. Resources released on destroy
+ * 2. Engine initializes components in onCreate()
+ * 3. onSurfaceCreated() starts GL rendering thread with Engine's SurfaceHolder
+ * 4. Renderer loads configuration and shaders
+ * 5. Rendering loop runs continuously at 60fps
+ * 6. Engine pauses/resumes based on visibility
+ * 7. Resources released on onSurfaceDestroyed()
  *
  * Features:
  * - Dynamic shader loading based on configuration
@@ -31,6 +31,7 @@ import com.aether.wallpaper.shader.ShaderRegistry
  * - Background image loading from URI
  * - Visibility handling (pause when screen off)
  * - Clean resource management
+ * - Manual EGL setup for proper wallpaper integration
  */
 class AetherWallpaperService : WallpaperService() {
 
@@ -41,12 +42,12 @@ class AetherWallpaperService : WallpaperService() {
     /**
      * Wallpaper engine that manages OpenGL rendering.
      *
-     * Extends WallpaperService.Engine and integrates GLSurfaceView
-     * for hardware-accelerated rendering.
+     * Uses manual EGL setup with a custom GL thread instead of GLSurfaceView.
+     * This is the correct pattern for OpenGL ES wallpapers.
      */
     inner class AetherEngine : Engine() {
 
-        private var glSurfaceView: WallpaperGLSurfaceView? = null
+        private var glRenderer: GLWallpaperRenderer? = null
         private var renderer: GLRenderer? = null
         private var configManager: ConfigManager? = null
         private var shaderRegistry: ShaderRegistry? = null
@@ -60,13 +61,13 @@ class AetherWallpaperService : WallpaperService() {
 
             // Discover available shaders
             shaderRegistry?.discoverShaders()
+        }
+
+        override fun onSurfaceCreated(holder: SurfaceHolder) {
+            super.onSurfaceCreated(holder)
 
             // Load configuration
             val config = configManager?.loadConfig()
-
-            // Create GLSurfaceView for wallpaper
-            glSurfaceView = WallpaperGLSurfaceView(this@AetherWallpaperService, this)
-            glSurfaceView?.setEGLContextClientVersion(2) // OpenGL ES 2.0
 
             // Create renderer with configuration
             config?.let {
@@ -84,8 +85,25 @@ class AetherWallpaperService : WallpaperService() {
                     "shaders/vertex_shader.vert",
                     fragmentShaderFile
                 )
-                glSurfaceView?.setRenderer(renderer)
+
+                // Create GL rendering thread with wallpaper's surface holder
+                glRenderer = GLWallpaperRenderer(holder, renderer!!)
+                glRenderer?.start()
             }
+        }
+
+        override fun onSurfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+            super.onSurfaceChanged(holder, format, width, height)
+            // Surface size changes are handled automatically by the GL thread
+        }
+
+        override fun onSurfaceDestroyed(holder: SurfaceHolder) {
+            super.onSurfaceDestroyed(holder)
+
+            // Stop GL rendering thread
+            glRenderer?.stop()
+            glRenderer = null
+            renderer = null
         }
 
         override fun onVisibilityChanged(visible: Boolean) {
@@ -93,10 +111,10 @@ class AetherWallpaperService : WallpaperService() {
 
             if (visible) {
                 // Resume rendering when visible
-                glSurfaceView?.onResume()
+                glRenderer?.start()
             } else {
                 // Pause rendering when not visible (saves battery)
-                glSurfaceView?.onPause()
+                glRenderer?.stop()
             }
         }
 
@@ -104,35 +122,11 @@ class AetherWallpaperService : WallpaperService() {
             super.onDestroy()
 
             // Clean up resources
-            glSurfaceView?.onDestroy()
+            glRenderer?.stop()
+            glRenderer = null
             renderer = null
-            glSurfaceView = null
             configManager = null
             shaderRegistry = null
-        }
-    }
-
-    /**
-     * Custom GLSurfaceView for live wallpaper.
-     *
-     * Integrates GLSurfaceView with WallpaperService by overriding
-     * getHolder() to return the wallpaper's SurfaceHolder.
-     */
-    class WallpaperGLSurfaceView(
-        wallpaperService: AetherWallpaperService,
-        engine: WallpaperService.Engine
-    ) : GLSurfaceView(wallpaperService) {
-
-        private val wallpaperSurfaceHolder: SurfaceHolder = engine.surfaceHolder
-
-        override fun getHolder(): SurfaceHolder {
-            // Return the wallpaper's surface holder instead of creating a new one
-            return wallpaperSurfaceHolder
-        }
-
-        fun onDestroy() {
-            // Clean up GLSurfaceView resources
-            // The actual cleanup is handled by the renderer
         }
     }
 }
