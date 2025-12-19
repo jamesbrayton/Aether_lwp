@@ -108,6 +108,18 @@ class AetherWallpaperService : WallpaperService() {
                     }
                 }
 
+                // Set shader parameters from first enabled layer
+                firstEnabledLayer?.let { layer ->
+                    val params = layer.params.mapValues { (_, value) ->
+                        when (value) {
+                            is Number -> value.toFloat()
+                            else -> value.toString().toFloat()
+                        }
+                    }
+                    Log.d(TAG, "Setting shader parameters: $params")
+                    renderer?.setShaderParameters(params)
+                }
+
                 // Create GL rendering thread with wallpaper's surface holder
                 glRenderer = GLWallpaperRenderer(holder, renderer!!)
                 glRenderer?.start()

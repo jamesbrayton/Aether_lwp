@@ -56,6 +56,9 @@ class GLRenderer(
     private var backgroundCropRect: CropRect? = null
     private var backgroundTextureLoaded: Boolean = false
 
+    // Shader parameters from configuration
+    private var shaderParameters: Map<String, Float> = emptyMap()
+
     companion object {
         private const val TAG = "GLRenderer"
         // Fullscreen quad vertices: 2 triangles covering (-1,-1) to (1,1)
@@ -105,6 +108,17 @@ class GLRenderer(
         uniformLocations["u_backgroundTexture"] = GLES20.glGetUniformLocation(shaderProgram, "u_backgroundTexture")
         uniformLocations["u_gyroOffset"] = GLES20.glGetUniformLocation(shaderProgram, "u_gyroOffset")
         uniformLocations["u_depthValue"] = GLES20.glGetUniformLocation(shaderProgram, "u_depthValue")
+
+        // Get shader-specific parameter locations
+        shaderParameters.keys.forEach { paramName ->
+            val location = GLES20.glGetUniformLocation(shaderProgram, paramName)
+            if (location >= 0) {
+                uniformLocations[paramName] = location
+                Log.d(TAG, "Found uniform location for $paramName: $location")
+            } else {
+                Log.w(TAG, "Shader parameter $paramName not found in shader")
+            }
+        }
 
         // Create fullscreen quad vertex buffer
         createVertexBuffer()
@@ -201,6 +215,15 @@ class GLRenderer(
         uniformLocations["u_depthValue"]?.let { location ->
             if (location >= 0) {
                 GLES20.glUniform1f(location, 0.0f)
+            }
+        }
+
+        // Set shader-specific parameters
+        shaderParameters.forEach { (paramName, value) ->
+            uniformLocations[paramName]?.let { location ->
+                if (location >= 0) {
+                    GLES20.glUniform1f(location, value)
+                }
             }
         }
     }
@@ -321,6 +344,18 @@ class GLRenderer(
         backgroundUri = uri
         backgroundCropRect = cropRect
         backgroundTextureLoaded = false
+    }
+
+    /**
+     * Set shader parameters.
+     *
+     * Can be called from any thread. Parameters will be applied on the GL thread.
+     *
+     * @param parameters Map of parameter names to values
+     */
+    fun setShaderParameters(parameters: Map<String, Float>) {
+        Log.d(TAG, "setShaderParameters: $parameters")
+        shaderParameters = parameters
     }
 
     /**
