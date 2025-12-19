@@ -15,29 +15,81 @@ phase: Phase 1 Complete - Ready for Deployment
 
 ## Latest Development (2025-12-18)
 
-### Devcontainer Architecture Clarification ✅
+### Devcontainer Platform Strategy: Docker (Not Kubernetes) ✅
 
-**Issue:** Ambiguity about container architecture (ARM vs x86_64)
+**Decision:** Use Docker-based devcontainers locally, defer cloud/remote development to future.
+
+**Discovery: Kubernetes Single-Node Constraint**
+- Rancher Desktop runs a single-node Kubernetes cluster (ARM64 on M-series Macs)
+- **Critical Constraint:** Single-node clusters cannot run mixed ARM/x86 workloads
+- When ARM pods exist on a node, Kubernetes cannot schedule x86 pods
+- Error: `"no matching manifest for linux/arm64/v8 in the manifest list"`
+- This is a Kubernetes scheduling constraint, not a DevPod or Docker issue
 
 **Root Cause:**
-- Docker on M-series Macs defaults to ARM64 containers unless explicitly specified
-- Adoptium JDK names directory "amd64" even on ARM installations (misleading)
-- ARM_DEVELOPMENT.md discusses native Mac development, not devcontainer architecture
-- Previous configuration had no explicit platform specification
+1. Kubernetes nodes have a single architecture
+2. When scheduling pods, Kubernetes checks node architecture
+3. Image registry returns platform-specific manifest list
+4. Node reports `linux/arm64` → Kubernetes attempts to pull ARM variant
+5. If only x86_64 variant exists → image pull fails
+6. Multi-platform images don't help (Kubernetes still prioritizes node architecture)
 
-**Solution Implemented:**
-- ✅ Added `--platform=linux/amd64` to Dockerfile `FROM` statement
-- ✅ Added `"options": ["--platform=linux/amd64"]` to devcontainer.json build config
-- ✅ Container now explicitly runs as x86_64 on all host architectures
-- ✅ Rosetta 2 handles translation on M-series Macs (external to container)
+**Why Multi-Platform Images Don't Work:**
+- Even if image is built for both `linux/amd64` and `linux/arm64`
+- Kubernetes scheduler prioritizes matching node architecture
+- On ARM node, it pulls ARM variant (or fails if ARM variant missing)
+- Cannot force x86 variant on ARM node without multi-node cluster + node selectors
 
-**Rationale:**
-- Java/Android SDK dependencies expect x86_64 architecture
-- Explicit platform specification prevents architecture ambiguity
-- Rosetta translation happens transparently (no performance impact for code editing)
-- GitHub Actions builds remain x86_64 (consistent with devcontainer)
+**Attempted Solutions (All Failed for Single-Node):**
+1. ❌ Build multi-platform image → Kubernetes still pulls ARM variant
+2. ❌ DevPod `--platform` flag → DevPod respects host architecture
+3. ❌ Kubernetes RuntimeClass → Requires QEMU integration or multi-node cluster
+4. ❌ Pod `nodeSelector` for architecture → No x86 nodes in single-node cluster
 
-**Result:** Container is explicitly x86_64, Rosetta handles ARM translation externally ✅
+**Final Solution:**
+- ✅ Use Docker (not Kubernetes) for local devcontainer development
+- ✅ Docker respects `--platform=linux/amd64` flag explicitly
+- ✅ Rosetta 2 handles ARM→x86 translation transparently
+- ✅ No additional VM overhead required
+- ✅ Rancher Desktop can still be used for other ARM Kubernetes projects
+
+**Configuration:**
+```dockerfile
+# Dockerfile
+FROM --platform=linux/amd64 ubuntu:noble
+```
+
+```json
+// devcontainer.json
+{
+  "image": "ghcr.io/username/aether-android-dev:latest",
+  "runArgs": ["--platform=linux/amd64"],
+  "remoteEnv": {
+    "DOCKER_DEFAULT_PLATFORM": "linux/amd64"
+  }
+}
+```
+
+**Build Command:**
+```bash
+DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build --platform linux/amd64 -t image:latest .
+```
+
+**Future Cloud/Remote Development (Phase 3+):**
+- GitHub Codespaces (native x86_64 infrastructure, zero configuration)
+- Remote VSCode on cloud x86_64 instance (GCP/AWS)
+- Multi-node Kubernetes cluster with x86_64 node pool + architecture selectors
+
+**Documentation Updates:**
+- ✅ ADR-012 added to architecture-decisions.md
+- ✅ ARM_DEVELOPMENT.md updated with Kubernetes constraint
+- ✅ Dedicated "Devcontainer Development" section added
+- ✅ Clear warning about single-node cluster limitations
+
+**Key Learning:**
+Kubernetes single-node clusters have fundamental architecture constraints. For local development with architecture requirements that differ from the host, Docker is simpler and more flexible than Kubernetes. Save Kubernetes for cloud deployments or multi-node clusters where architecture node selectors can be used.
+
+**Result:** Docker-based devcontainer works perfectly, Kubernetes constraint documented for future reference ✅
 
 **Devcontainer:**
 - ✅ JDK 21 (Eclipse Temurin)
@@ -46,7 +98,8 @@ phase: Phase 1 Complete - Ready for Deployment
 - ✅ Kotlin 1.9.23
 - ✅ GitHub CLI (gh)
 - ✅ Git configured
-- ✅ **Explicit x86_64 architecture** (2025-12-18)
+- ✅ **Explicit x86_64 architecture via Docker** (2025-12-18)
+- ✅ **Not using Kubernetes** (single-node constraint documented)
 
 **Documentation:**
 - ✅ BUILD.md (comprehensive build instructions)

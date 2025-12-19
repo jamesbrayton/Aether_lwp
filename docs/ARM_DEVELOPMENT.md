@@ -15,8 +15,15 @@ This guide is specifically for developers working on Aether Live Wallpaper with 
 | Build APKs | GitHub Actions | Cloud x86 builds |
 | Debug/Profile | Android Studio | Native ARM support |
 | Run emulator | Android Studio | 3-5x faster on ARM! |
+| Devcontainer | Docker (local) | x86_64 via Rosetta 2 |
 
 **Result:** You never need an x86 machine. Everything works natively or via GitHub Actions.
+
+**⚠️ IMPORTANT: Kubernetes Constraint**
+- **Rancher Desktop's single-node cluster cannot run mixed ARM/x86 workloads**
+- If ARM pods exist, x86 pods will fail with: `"no matching manifest for linux/arm64/v8"`
+- **Use Docker** (not Kubernetes) for local x86_64 devcontainers
+- Future: Cloud devcontainers on x86_64 infrastructure (GitHub Codespaces, remote instances)
 
 ---
 
@@ -124,6 +131,12 @@ See [DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md) for details.
 
 - **x86-only Build Tools:** Some legacy tools
   - **Workaround:** Use GitHub Actions (cloud x86 builds)
+- **Kubernetes Single-Node Clusters:** Cannot run mixed ARM/x86 workloads
+  - **Issue:** Rancher Desktop single-node cluster runs ARM architecture
+  - **Constraint:** When ARM pods exist, cannot schedule x86 pods on same node
+  - **Error:** `"no matching manifest for linux/arm64/v8 in the manifest list"`
+  - **Workaround:** Use Docker (not Kubernetes) for local devcontainer
+  - **Future:** Cloud devcontainers (GitHub Codespaces, GCP/AWS x86_64 instances)
 
 ---
 
@@ -418,6 +431,74 @@ export PATH=$PATH:$ANDROID_HOME/emulator
 # Gradle optimization
 export GRADLE_OPTS="-Xmx4g -XX:MaxMetaspaceSize=512m"
 ```
+
+---
+
+## Devcontainer Development
+
+### Docker (Recommended for Local Development)
+
+**Configuration:**
+```json
+{
+  "image": "ghcr.io/username/aether-android-dev:latest",
+  "runArgs": ["--platform=linux/amd64"],
+  "remoteEnv": {
+    "DOCKER_DEFAULT_PLATFORM": "linux/amd64"
+  }
+}
+```
+
+**How it Works:**
+- Devcontainer runs as explicit x86_64 architecture
+- Rosetta 2 handles ARM→x86 translation transparently
+- Zero configuration required, works immediately
+- Container image built with: `docker build --platform linux/amd64`
+
+**Pros:**
+- ✅ Consistent x86_64 environment across all platforms
+- ✅ No additional VM overhead
+- ✅ Works with local Docker or Rancher Desktop
+- ✅ Rosetta 2 translation is fast enough for development
+
+**Cons:**
+- ⚠️ Slight performance overhead (Rosetta translation)
+- ⚠️ Cannot use Rancher Desktop's Kubernetes for devcontainers
+
+### Kubernetes (Not Recommended for M-series Macs)
+
+**Constraint: Single-Node Cluster Architecture Limitation**
+
+Rancher Desktop runs a single-node Kubernetes cluster on your Mac. This creates a fundamental limitation:
+
+**Problem:**
+- Kubernetes nodes have a single architecture (ARM64 on M-series Macs)
+- When ARM pods already exist on the node, Kubernetes **cannot schedule x86 pods**
+- Attempting to pull x86_64 images fails with: `"no matching manifest for linux/arm64/v8 in the manifest list"`
+
+**Why This Happens:**
+1. Kubernetes checks the node's architecture when scheduling pods
+2. Image registry returns platform-specific manifest list
+3. If only `linux/amd64` variant exists, but node is `linux/arm64`, pull fails
+4. Single-node clusters cannot run mixed-architecture workloads
+
+**Multi-Platform Images Don't Help:**
+- Even if you build for both platforms, Kubernetes prioritizes node architecture
+- Node reports `linux/arm64` → Kubernetes pulls ARM variant
+- If ARM variant doesn't exist or has issues → deployment fails
+
+**Workarounds (All Complex):**
+- **Multi-node cluster:** Requires separate x86_64 nodes with architecture selectors
+- **RuntimeClass with QEMU:** Complex setup, requires QEMU integration in Kubernetes
+- **Additional VM:** Run separate x86_64 Kubernetes cluster in VM (resource heavy)
+
+**Recommendation:**
+**Use Docker (not Kubernetes) for local devcontainers on M-series Macs.**
+
+Future cloud/remote development options:
+- GitHub Codespaces (native x86_64 infrastructure)
+- Remote VSCode on cloud x86_64 instance (GCP/AWS)
+- DevPod on multi-node Kubernetes cluster with x86_64 node pool
 
 ---
 
