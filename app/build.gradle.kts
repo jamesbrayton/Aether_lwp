@@ -56,6 +56,11 @@ android {
     }
 }
 
+tasks.withType<Test> {
+    maxHeapSize = "1024m"
+    jvmArgs("-XX:MaxMetaspaceSize=512m")
+}
+
 dependencies {
     // Core Android
     implementation("androidx.core:core-ktx:1.12.0")
