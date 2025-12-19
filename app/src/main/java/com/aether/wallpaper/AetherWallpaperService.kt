@@ -120,12 +120,14 @@ class AetherWallpaperService : WallpaperService() {
      */
     class WallpaperGLSurfaceView(
         wallpaperService: AetherWallpaperService,
-        private val engine: WallpaperService.Engine
+        engine: WallpaperService.Engine
     ) : GLSurfaceView(wallpaperService) {
+
+        private val wallpaperSurfaceHolder: SurfaceHolder = engine.surfaceHolder
 
         override fun getHolder(): SurfaceHolder {
             // Return the wallpaper's surface holder instead of creating a new one
-            return engine.surfaceHolder
+            return wallpaperSurfaceHolder
         }
 
         fun onDestroy() {
