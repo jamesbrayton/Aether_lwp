@@ -1,8 +1,12 @@
 package com.aether.wallpaper.renderer
 
 import android.content.Context
+import android.net.Uri
 import android.opengl.GLES20
+import android.util.Log
+import com.aether.wallpaper.model.CropRect
 import com.aether.wallpaper.shader.ShaderLoader
+import com.aether.wallpaper.texture.TextureManager
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -41,10 +45,19 @@ class GLRenderer(
     // ShaderLoader instance
     private lateinit var shaderLoader: ShaderLoader
 
-    // Placeholder texture (will be replaced with actual background texture)
+    // TextureManager instance
+    private lateinit var textureManager: TextureManager
+
+    // Background texture ID
     private var backgroundTextureId: Int = 0
 
+    // Background configuration (URI and crop rect)
+    private var backgroundUri: Uri? = null
+    private var backgroundCropRect: CropRect? = null
+    private var backgroundTextureLoaded: Boolean = false
+
     companion object {
+        private const val TAG = "GLRenderer"
         // Fullscreen quad vertices: 2 triangles covering (-1,-1) to (1,1)
         // Triangle 1: (-1,-1), (1,-1), (-1,1)
         // Triangle 2: (-1,1), (1,-1), (1,1)
@@ -72,7 +85,11 @@ class GLRenderer(
         // Initialize shader loader
         shaderLoader = ShaderLoader(context)
 
+        // Initialize texture manager
+        textureManager = TextureManager(context)
+
         // Load and compile shaders
+        Log.d(TAG, "Loading shaders: vertex=$vertexShaderFile, fragment=$fragmentShaderFile")
         try {
             shaderProgram = shaderLoader.createProgram(vertexShaderFile, fragmentShaderFile)
         } catch (e: Exception) {
@@ -104,12 +121,20 @@ class GLRenderer(
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+        Log.d(TAG, "onSurfaceChanged: ${width}x${height}")
+
         // Set viewport to match screen size
         GLES20.glViewport(0, 0, width, height)
 
         // Store screen dimensions
         screenWidth = width
         screenHeight = height
+
+        // Load background texture if configured and not already loaded
+        if (!backgroundTextureLoaded && backgroundUri != null) {
+            loadBackgroundTexture(backgroundUri!!, backgroundCropRect)
+            backgroundTextureLoaded = true
+        }
 
         checkGLError("onSurfaceChanged")
     }
@@ -280,6 +305,61 @@ class GLRenderer(
      */
     fun getElapsedTime(): Float {
         return (System.currentTimeMillis() - startTime) / 1000.0f
+    }
+
+    /**
+     * Set background configuration.
+     *
+     * Can be called from any thread. The texture will be loaded on the GL thread
+     * when the surface is ready.
+     *
+     * @param uri Content URI of the background image
+     * @param cropRect Optional crop rectangle
+     */
+    fun setBackgroundConfig(uri: Uri?, cropRect: CropRect? = null) {
+        Log.d(TAG, "setBackgroundConfig: uri=$uri")
+        backgroundUri = uri
+        backgroundCropRect = cropRect
+        backgroundTextureLoaded = false
+    }
+
+    /**
+     * Load background texture from URI with optional crop.
+     *
+     * This must be called on the GL thread (e.g., from onSurfaceCreated or after it).
+     *
+     * @param uri Content URI of the background image
+     * @param cropRect Optional crop rectangle
+     */
+    private fun loadBackgroundTexture(uri: Uri, cropRect: CropRect? = null) {
+        Log.d(TAG, "Loading background texture from URI: $uri")
+
+        try {
+            // Release old placeholder texture
+            if (backgroundTextureId != 0) {
+                val oldIds = intArrayOf(backgroundTextureId)
+                GLES20.glDeleteTextures(1, oldIds, 0)
+                backgroundTextureId = 0
+            }
+
+            // Load new texture
+            backgroundTextureId = textureManager.loadTexture(
+                uri,
+                screenWidth,
+                screenHeight,
+                cropRect
+            )
+
+            if (backgroundTextureId > 0) {
+                Log.d(TAG, "Background texture loaded successfully: ID=$backgroundTextureId")
+            } else {
+                Log.e(TAG, "Failed to load background texture, creating placeholder")
+                createPlaceholderTexture()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading background texture", e)
+            createPlaceholderTexture()
+        }
     }
 
     /**

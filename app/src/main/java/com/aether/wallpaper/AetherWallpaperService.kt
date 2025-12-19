@@ -1,6 +1,8 @@
 package com.aether.wallpaper
 
+import android.net.Uri
 import android.service.wallpaper.WallpaperService
+import android.util.Log
 import android.view.SurfaceHolder
 import com.aether.wallpaper.config.ConfigManager
 import com.aether.wallpaper.renderer.GLRenderer
@@ -35,6 +37,10 @@ import com.aether.wallpaper.shader.ShaderRegistry
  */
 class AetherWallpaperService : WallpaperService() {
 
+    companion object {
+        private const val TAG = "AetherWallpaperService"
+    }
+
     override fun onCreateEngine(): Engine {
         return AetherEngine()
     }
@@ -66,6 +72,8 @@ class AetherWallpaperService : WallpaperService() {
         override fun onSurfaceCreated(holder: SurfaceHolder) {
             super.onSurfaceCreated(holder)
 
+            Log.d(TAG, "Engine.onSurfaceCreated")
+
             // Load configuration
             val config = configManager?.loadConfig()
 
@@ -88,6 +96,17 @@ class AetherWallpaperService : WallpaperService() {
                     "vertex_shader.vert",  // Just filename, ShaderLoader adds "shaders/" prefix
                     fragmentShaderFile
                 )
+
+                // Set background configuration if available
+                it.background?.uri?.let { uriString ->
+                    try {
+                        val uri = Uri.parse(uriString)
+                        Log.d(TAG, "Setting background: uri=$uri, crop=${it.background.crop}")
+                        renderer?.setBackgroundConfig(uri, it.background.crop)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to parse background URI: $uriString", e)
+                    }
+                }
 
                 // Create GL rendering thread with wallpaper's surface holder
                 glRenderer = GLWallpaperRenderer(holder, renderer!!)
