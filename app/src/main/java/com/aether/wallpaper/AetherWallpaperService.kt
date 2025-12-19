@@ -73,16 +73,19 @@ class AetherWallpaperService : WallpaperService() {
             config?.let {
                 // Get the first enabled layer's shader, or use test.frag as fallback
                 val firstEnabledLayer = it.layers.firstOrNull { layer -> layer.enabled }
-                val fragmentShaderFile = if (firstEnabledLayer != null) {
+                val fragmentShaderPath = if (firstEnabledLayer != null) {
                     val shader = shaderRegistry?.getShaderById(firstEnabledLayer.shaderId)
                     shader?.fragmentShaderPath ?: "shaders/test.frag"
                 } else {
                     "shaders/test.frag"
                 }
 
+                // Strip "shaders/" prefix since ShaderLoader.loadShaderFromAssets() adds it
+                val fragmentShaderFile = fragmentShaderPath.removePrefix("shaders/")
+
                 renderer = GLRenderer(
                     this@AetherWallpaperService,
-                    "shaders/vertex_shader.vert",
+                    "vertex_shader.vert",  // Just filename, ShaderLoader adds "shaders/" prefix
                     fragmentShaderFile
                 )
 
