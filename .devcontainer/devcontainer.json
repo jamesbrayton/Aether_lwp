@@ -16,23 +16,12 @@
     "--platform=linux/amd64"
   ],
   
-  // DevPod-specific platform requirement
-  "hostRequirements": {
-    "cpus": 2,
-    "memory": "4gb",
-    "storage": "32gb"
-  },
-  
-  // Kubernetes-specific overrides for DevPod
-  "overrideCommand": false,
-  
   // Optional: persistent home directory for Gradle cache, etc.
   "mounts": [
   ],
 
   "remoteEnv": {
-    "PATH":"${containerEnv:HOME}/.local/bin:${containerEnv:PATH}",
-    "DOCKER_DEFAULT_PLATFORM":"linux/amd64"
+    "PATH":"${containerEnv:HOME}/.local/bin:${containerEnv:PATH}"
   },
   
   // Minimal post-create (everything is pre-installed)
