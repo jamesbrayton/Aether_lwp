@@ -280,20 +280,6 @@ class TextureManager(private val context: Context) {
             return 0
         }
 
-        // Flip bitmap vertically for OpenGL coordinate system
-        // OpenGL has (0,0) at bottom-left, but Android bitmaps have (0,0) at top-left
-        val matrix = Matrix()
-        matrix.postScale(1f, -1f) // Flip Y axis
-        val flippedBitmap = Bitmap.createBitmap(
-            bitmap,
-            0,
-            0,
-            bitmap.width,
-            bitmap.height,
-            matrix,
-            false
-        )
-
         // Bind texture
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
 
@@ -319,13 +305,9 @@ class TextureManager(private val context: Context) {
             GLES20.GL_CLAMP_TO_EDGE
         )
 
-        // Upload flipped bitmap to texture
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, flippedBitmap, 0)
-
-        // Clean up flipped bitmap if it's different from original
-        if (flippedBitmap != bitmap) {
-            flippedBitmap.recycle()
-        }
+        // Upload bitmap to texture
+        // Note: UV flip is handled in shader (uv.y = 1.0 - uv.y)
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
 
         val error = GLES20.glGetError()
         if (error != GLES20.GL_NO_ERROR) {
@@ -337,7 +319,7 @@ class TextureManager(private val context: Context) {
         // Unbind
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
 
-        Log.d(TAG, "Created texture $textureId from ${bitmap.width}x${bitmap.height} bitmap (flipped for OpenGL)")
+        Log.d(TAG, "Created texture $textureId from ${bitmap.width}x${bitmap.height} bitmap")
         return textureId
     }
 
