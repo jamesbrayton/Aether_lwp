@@ -232,7 +232,9 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun updateApplyButton() {
         val hasLayers = layerAdapter.itemCount > 0
-        applyWallpaperButton.isEnabled = hasLayers
+        val hasBackground = currentConfig?.background != null
+        // Enable apply button if user has either layers OR a background image
+        applyWallpaperButton.isEnabled = hasLayers || hasBackground
     }
 
     private fun selectBackgroundImage() {

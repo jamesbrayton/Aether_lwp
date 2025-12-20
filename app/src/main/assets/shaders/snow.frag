@@ -97,7 +97,11 @@ void main() {
         snowColor += vec3(1.0) * alpha;
     }
 
-    // Composite: background + snow particles
-    // Snow is pure additive (no alpha channel needed, just RGB addition)
-    gl_FragColor = background + vec4(snowColor, 1.0);
+    // Composite: background + snow particles using proper alpha blending
+    // Limit snow intensity to prevent oversaturation
+    float snowIntensity = min(length(snowColor), 0.6); // Cap at 0.6 to prevent white-out
+    vec3 finalSnowColor = normalize(snowColor + vec3(0.001)) * snowIntensity;
+
+    // Alpha blend snow over background (not pure additive to prevent oversaturation)
+    gl_FragColor = vec4(background.rgb * (1.0 - snowIntensity) + finalSnowColor, background.a);
 }

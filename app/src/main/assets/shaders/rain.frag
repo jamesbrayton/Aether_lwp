@@ -114,7 +114,11 @@ void main() {
         rainColor += vec3(0.7, 0.8, 1.0) * alpha;
     }
 
-    // Composite: background + rain streaks
-    // Rain is pure additive (no alpha channel needed, just RGB addition)
-    gl_FragColor = background + vec4(rainColor, 1.0);
+    // Composite: background + rain streaks using proper alpha blending
+    // Limit rain intensity to prevent oversaturation
+    float rainIntensity = min(length(rainColor), 0.5); // Cap at 0.5 to prevent white-out
+    vec3 finalRainColor = normalize(rainColor + vec3(0.001)) * rainIntensity;
+
+    // Alpha blend rain over background (not pure additive to prevent oversaturation)
+    gl_FragColor = vec4(background.rgb * (1.0 - rainIntensity) + finalRainColor, background.a);
 }

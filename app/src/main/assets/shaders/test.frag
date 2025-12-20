@@ -34,8 +34,9 @@ void main() {
 
     // Simple animated gradient effect for testing
     float gradient = sin(uv.x * 10.0 + u_time * u_speed) * 0.5 + 0.5;
-    vec3 testColor = vec3(gradient) * u_intensity;
+    float effectAlpha = gradient * u_intensity * 0.3; // Scale down to prevent oversaturation
+    vec3 testColor = vec3(1.0, 0.5, 0.2); // Orange tint for visibility
 
-    // Composite with background
-    gl_FragColor = background + vec4(testColor, 1.0);
+    // Alpha blend with background (not pure additive to prevent oversaturation)
+    gl_FragColor = vec4(mix(background.rgb, testColor, effectAlpha), background.a);
 }

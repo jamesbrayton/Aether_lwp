@@ -79,13 +79,14 @@ class AetherWallpaperService : WallpaperService() {
 
             // Create renderer with configuration
             config?.let {
-                // Get the first enabled layer's shader, or use test.frag as fallback
+                // Get the first enabled layer's shader, or use passthrough.frag if no layers
                 val firstEnabledLayer = it.layers.firstOrNull { layer -> layer.enabled }
                 val fragmentShaderPath = if (firstEnabledLayer != null) {
                     val shader = shaderRegistry?.getShaderById(firstEnabledLayer.shaderId)
-                    shader?.fragmentShaderPath ?: "shaders/test.frag"
+                    shader?.fragmentShaderPath ?: "shaders/passthrough.frag"
                 } else {
-                    "shaders/test.frag"
+                    // No layers - use passthrough shader to just display background
+                    "shaders/passthrough.frag"
                 }
 
                 // Strip "shaders/" prefix since ShaderLoader.loadShaderFromAssets() adds it
