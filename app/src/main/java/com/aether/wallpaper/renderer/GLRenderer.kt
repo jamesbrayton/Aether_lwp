@@ -126,6 +126,10 @@ class GLRenderer(
         // Create placeholder background texture
         createPlaceholderTexture()
 
+        // Reset texture loaded flag since we have a new OpenGL context
+        // This ensures the texture will be reloaded in onSurfaceChanged
+        backgroundTextureLoaded = false
+
         // Initialize timing
         startTime = System.currentTimeMillis()
         lastFrameTime = startTime
