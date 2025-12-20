@@ -22,6 +22,10 @@ uniform float u_depthValue;
 void main() {
     vec2 uv = gl_FragCoord.xy / u_resolution;
 
+    // Flip Y coordinate because OpenGL textures have (0,0) at bottom-left
+    // but Android bitmaps have (0,0) at top-left
+    uv.y = 1.0 - uv.y;
+
     // Simply output the background texture with gyroscope offset for parallax (future)
     vec2 offsetUV = uv + u_gyroOffset;
     gl_FragColor = texture2D(u_backgroundTexture, offsetUV);

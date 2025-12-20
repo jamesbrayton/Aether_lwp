@@ -29,6 +29,10 @@ uniform float u_speed;
 void main() {
     vec2 uv = gl_FragCoord.xy / u_resolution;
 
+    // Flip Y coordinate because OpenGL textures have (0,0) at bottom-left
+    // but Android bitmaps have (0,0) at top-left
+    uv.y = 1.0 - uv.y;
+
     // Sample background
     vec4 background = texture2D(u_backgroundTexture, uv);
 
