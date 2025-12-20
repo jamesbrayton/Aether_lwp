@@ -11,7 +11,7 @@
  *
  * @param u_particleCount float 100.0 min=50.0 max=150.0 step=5.0 name="Raindrop Count" desc="Number of rain streaks"
  * @param u_speed float 2.0 min=1.0 max=3.0 step=0.1 name="Fall Speed" desc="How fast rain falls"
- * @param u_angle float 70.0 min=60.0 max=80.0 step=1.0 name="Rain Angle" desc="Angle of rain streaks in degrees"
+ * @param u_angle float 20.0 min=-45.0 max=135.0 step=5.0 name="Rain Angle" desc="Angle of rain streaks (0=down, 90=right, -45=down-left)"
  * @param u_streakLength float 0.03 min=0.01 max=0.05 step=0.005 name="Streak Length" desc="Length of rain streaks"
  */
 
@@ -55,14 +55,14 @@ void main() {
     vec3 rainColor = vec3(0.0);
 
     // Convert angle from degrees to radians
-    // 0 degrees = horizontal right, 90 degrees = straight down
-    // Angle represents deviation from vertical (90 degrees = vertical)
+    // 0 degrees = straight down, 90 degrees = horizontal right
+    // Positive angles lean right, negative angles lean left
     float angleRad = radians(u_angle);
 
     // Calculate rain direction vector
-    // sin(angle) gives horizontal component (right)
-    // -cos(angle) gives vertical component (down, negative because Y increases downward in UV space)
-    vec2 rainDirection = vec2(sin(angleRad), -cos(angleRad));
+    // sin(angle) gives horizontal component (positive = right, negative = left)
+    // cos(angle) gives vertical component (positive = down, negative = up in flipped UV space)
+    vec2 rainDirection = vec2(sin(angleRad), cos(angleRad));
 
     // Generate rain particles procedurally
     // Each iteration represents one rain streak

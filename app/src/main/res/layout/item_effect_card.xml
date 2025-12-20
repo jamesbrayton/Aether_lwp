@@ -18,8 +18,9 @@
       android:id="@+id/shaderName"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:textSize="16sp"
+      android:textSize="18sp"
       android:textStyle="bold"
+      android:textColor="@android:color/black"
       android:layout_marginBottom="4dp" />
 
     <!-- Shader description -->
@@ -27,8 +28,8 @@
       android:id="@+id/shaderDescription"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:textSize="14sp"
-      android:textColor="@android:color/darker_gray"
+      android:textSize="16sp"
+      android:textColor="#616161"
       android:layout_marginBottom="8dp" />
 
     <!-- Tags (chip group) -->
@@ -45,6 +46,7 @@
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:text="Add Effect"
+      android:textSize="16sp"
       android:layout_gravity="end"
       style="@style/Widget.MaterialComponents.Button.TextButton" />
 

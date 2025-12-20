@@ -35,7 +35,8 @@
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
             android:text="Cancel"
-            android:textColor="@android:color/white" />
+            android:textColor="@android:color/white"
+            android:textSize="20sp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/doneButton"
@@ -44,7 +45,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
-            android:text="Done" />
+            android:text="Done"
+            android:textSize="20sp" />
 
     </LinearLayout>
 
