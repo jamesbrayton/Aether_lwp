@@ -85,6 +85,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun initializeComponents() {
         shaderRegistry = ShaderRegistry(this)
+        shaderRegistry.discoverShaders() // Populate shader registry for onAddEffect
         configManager = ConfigManager(this)
     }
 
