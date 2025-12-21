@@ -188,9 +188,10 @@ class ShaderMetadataParser {
 
     /**
      * Parses a numeric attribute like min=0.0, max=5.0, step=0.1
+     * Supports negative values (e.g., min=-45.0)
      */
     private fun parseFloatAttribute(attributes: String, name: String, type: ParameterType): Any? {
-        val pattern = Regex("""$name=([\d.]+)""")
+        val pattern = Regex("""$name=(-?[\d.]+)""")
         val match = pattern.find(attributes) ?: return null
         val valueString = match.groupValues[1]
 

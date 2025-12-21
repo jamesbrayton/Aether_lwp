@@ -68,6 +68,7 @@ class EffectSelectorAdapter(
                 chip.text = tag
                 chip.isClickable = false
                 chip.isCheckable = false
+                chip.setTextColor(0xFFFF9800.toInt()) // Light orange color
                 tagsChipGroup.addView(chip)
             }
 
