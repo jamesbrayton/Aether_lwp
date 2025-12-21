@@ -17,14 +17,16 @@
       android:layout_width="0dp"
       android:layout_height="wrap_content"
       android:layout_weight="1"
-      android:textSize="14sp" />
+      android:textSize="16sp"
+      android:textColor="@android:color/white" />
 
     <TextView
       android:id="@+id/parameterValue"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:textSize="14sp"
-      android:textStyle="bold" />
+      android:textSize="16sp"
+      android:textStyle="bold"
+      android:textColor="@android:color/white" />
 
   </LinearLayout>
 
@@ -43,8 +45,8 @@
     android:id="@+id/parameterDescription"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:textSize="12sp"
-    android:textColor="@android:color/darker_gray"
+    android:textSize="14sp"
+    android:textColor="#BBBBBB"
     android:layout_marginTop="2dp" />
 
 </LinearLayout>

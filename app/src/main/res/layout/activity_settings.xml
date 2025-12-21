@@ -52,7 +52,7 @@
             android:text="Background Image"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:textColor="@android:color/black"
+            android:textColor="@android:color/white"
             android:layout_marginBottom="8dp" />
 
           <!-- Background preview -->
@@ -82,7 +82,7 @@
         android:text="Available Effects"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:textColor="@android:color/black"
+        android:textColor="@android:color/white"
         android:layout_marginBottom="8dp" />
 
       <!-- Effect selector RecyclerView -->
@@ -100,7 +100,7 @@
         android:text="Active Layers"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:textColor="@android:color/black"
+        android:textColor="@android:color/white"
         android:layout_marginBottom="8dp" />
 
       <!-- Empty state message -->

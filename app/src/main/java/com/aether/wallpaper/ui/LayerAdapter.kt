@@ -167,12 +167,14 @@ class LayerAdapter(
             val maxValue = (param.maxValue as? Number)?.toFloat() ?: 1f
             val stepSize = (param.step as? Number)?.toFloat() ?: 0.1f
 
-            parameterSlider.valueFrom = minValue
-            parameterSlider.valueTo = maxValue
+            // Material Slider doesn't support negative valueFrom, so offset if needed
+            val offset = if (minValue < 0f) -minValue else 0f
+            parameterSlider.valueFrom = minValue + offset
+            parameterSlider.valueTo = maxValue + offset
             parameterSlider.stepSize = stepSize
-            parameterSlider.value = currentValue.toFloat().coerceIn(minValue, maxValue)
+            parameterSlider.value = (currentValue.toFloat() + offset).coerceIn(minValue + offset, maxValue + offset)
 
-            // Display current value
+            // Display current value (actual value, not offset)
             parameterValue.text = when (param.type) {
                 ParameterType.INT -> currentValue.toInt().toString()
                 else -> String.format("%.2f", currentValue.toFloat())
@@ -180,15 +182,18 @@ class LayerAdapter(
 
             // Update on slider change
             parameterSlider.addOnChangeListener { _, value, _ ->
+                // Convert from offset slider value back to actual parameter value
+                val actualValue = value - offset
+
                 val newValue: Any = when (param.type) {
-                    ParameterType.INT -> value.toInt()
-                    else -> value
+                    ParameterType.INT -> actualValue.toInt()
+                    else -> actualValue
                 }
 
-                // Update value label
+                // Update value label (show actual value, not offset)
                 parameterValue.text = when (param.type) {
-                    ParameterType.INT -> value.toInt().toString()
-                    else -> String.format("%.2f", value)
+                    ParameterType.INT -> actualValue.toInt().toString()
+                    else -> String.format("%.2f", actualValue)
                 }
 
                 // Update layer config
