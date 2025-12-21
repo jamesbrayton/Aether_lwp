@@ -27,20 +27,14 @@ uniform float u_intensity;
 uniform float u_speed;
 
 void main() {
+    // Calculate UV coordinates in OpenGL space (0,0 at bottom-left)
     vec2 uv = gl_FragCoord.xy / u_resolution;
-
-    // Flip Y coordinate because OpenGL textures have (0,0) at bottom-left
-    // but Android bitmaps have (0,0) at top-left
-    uv.y = 1.0 - uv.y;
-
-    // Sample background
-    vec4 background = texture2D(u_backgroundTexture, uv);
 
     // Simple animated gradient effect for testing
     float gradient = sin(uv.x * 10.0 + u_time * u_speed) * 0.5 + 0.5;
     float effectAlpha = gradient * u_intensity * 0.3; // Scale down to prevent oversaturation
     vec3 testColor = vec3(1.0, 0.5, 0.2); // Orange tint for visibility
 
-    // Alpha blend with background (not pure additive to prevent oversaturation)
-    gl_FragColor = vec4(mix(background.rgb, testColor, effectAlpha), background.a);
+    // Output test effect with alpha (compositor will blend over background)
+    gl_FragColor = vec4(testColor, effectAlpha);
 }

@@ -35,14 +35,17 @@ uniform float u_opacity4;
 uniform int u_layerCount;
 
 void main() {
-    // Calculate UV coordinates
+    // Calculate UV coordinates in OpenGL space (0,0 at bottom-left)
     vec2 uv = gl_FragCoord.xy / u_resolution;
-    uv.y = 1.0 - uv.y; // Flip Y
 
-    // Start with background
-    vec4 finalColor = texture2D(u_backgroundTexture, uv);
+    // For background texture, flip Y because Android bitmaps have (0,0) at top-left
+    vec2 bgUV = vec2(uv.x, 1.0 - uv.y);
+
+    // Start with background (flip Y for Android bitmap)
+    vec4 finalColor = texture2D(u_backgroundTexture, bgUV);
 
     // Composite layers with alpha blending
+    // Layer textures are in OpenGL space, so no Y-flip needed
     // Formula: finalColor = mix(finalColor, layerColor, layerColor.a * opacity)
 
     if (u_layerCount > 0) {

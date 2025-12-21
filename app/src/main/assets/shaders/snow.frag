@@ -38,19 +38,11 @@ vec2 hash2D(float n) {
 }
 
 void main() {
-    // Calculate normalized UV coordinates (0.0 to 1.0)
+    // Calculate normalized UV coordinates in OpenGL space (0,0 at bottom-left)
     vec2 uv = gl_FragCoord.xy / u_resolution;
 
-    // Flip Y coordinate because OpenGL textures have (0,0) at bottom-left
-    // but Android bitmaps have (0,0) at top-left
-    uv.y = 1.0 - uv.y;
-
-    // Sample background texture
-    // Even if not visually prominent, always sample to comply with standard uniform contract
-    vec4 background = texture2D(u_backgroundTexture, uv);
-
-    // Initialize snow color (additive blending)
-    vec3 snowColor = vec3(0.0);
+    // Initialize snow accumulator
+    float snowAlpha = 0.0;
 
     // Generate particles procedurally
     // Each iteration represents one particle
@@ -65,12 +57,12 @@ void main() {
         // Each particle ID (i) produces a unique random seed
         vec2 particleSeed = hash2D(i);
 
-        // Vertical falling motion
+        // Vertical falling motion (downward in OpenGL space means decreasing Y)
         // Speed is scaled down (0.1) for gentle motion
         // mod() wraps particles from bottom (0.0) to top (1.0)
         float fallOffset = mod(u_time * u_speed * 0.1, 1.0);
-        float yPos = particleSeed.y + fallOffset;
-        yPos = mod(yPos, 1.0); // Wrap around: when yPos >= 1.0, it wraps to 0.0
+        float yPos = particleSeed.y - fallOffset;
+        yPos = mod(yPos, 1.0); // Wrap around: when yPos < 0.0, it wraps to 1.0
 
         // Lateral drift (side-to-side motion)
         // sin() creates oscillating motion
@@ -96,16 +88,16 @@ void main() {
         // particleSize = outer radius (fully transparent)
         float alpha = smoothstep(particleSize, particleSize * 0.5, dist);
 
-        // Accumulate snow color (white particles)
-        // Additive blending: multiple overlapping particles create brighter areas
-        snowColor += vec3(1.0) * alpha;
+        // Accumulate snow alpha (additive blending)
+        // Multiple overlapping particles create more opaque areas
+        snowAlpha += alpha;
     }
 
-    // Composite: background + snow particles using proper alpha blending
     // Limit snow intensity to prevent oversaturation
-    float snowIntensity = min(length(snowColor), 0.6); // Cap at 0.6 to prevent white-out
-    vec3 finalSnowColor = normalize(snowColor + vec3(0.001)) * snowIntensity;
+    snowAlpha = min(snowAlpha, 1.0);
 
-    // Alpha blend snow over background (not pure additive to prevent oversaturation)
-    gl_FragColor = vec4(background.rgb * (1.0 - snowIntensity) + finalSnowColor, background.a);
+    // Output snow particles with alpha
+    // White particles (1.0, 1.0, 1.0) with accumulated alpha
+    // The compositor will blend this over the background
+    gl_FragColor = vec4(1.0, 1.0, 1.0, snowAlpha);
 }

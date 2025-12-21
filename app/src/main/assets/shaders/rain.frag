@@ -40,29 +40,21 @@ vec2 hash2D(float n) {
 }
 
 void main() {
-    // Calculate normalized UV coordinates (0.0 to 1.0)
+    // Calculate normalized UV coordinates in OpenGL space (0,0 at bottom-left)
     vec2 uv = gl_FragCoord.xy / u_resolution;
 
-    // Flip Y coordinate because OpenGL textures have (0,0) at bottom-left
-    // but Android bitmaps have (0,0) at top-left
-    uv.y = 1.0 - uv.y;
-
-    // Sample background texture
-    // Even if not visually prominent, always sample to comply with standard uniform contract
-    vec4 background = texture2D(u_backgroundTexture, uv);
-
-    // Initialize rain color (additive blending)
-    vec3 rainColor = vec3(0.0);
+    // Initialize rain accumulator
+    float rainAlpha = 0.0;
 
     // Convert angle from degrees to radians
     // 0 degrees = straight down, 90 degrees = horizontal right
     // Positive angles lean right, negative angles lean left
     float angleRad = radians(u_angle);
 
-    // Calculate rain direction vector
+    // Calculate rain direction vector in OpenGL space
     // sin(angle) gives horizontal component (positive = right, negative = left)
-    // cos(angle) gives vertical component (positive = down, negative = up in flipped UV space)
-    vec2 rainDirection = vec2(sin(angleRad), cos(angleRad));
+    // -cos(angle) gives vertical component (negative = down in OpenGL space)
+    vec2 rainDirection = vec2(sin(angleRad), -cos(angleRad));
 
     // Generate rain particles procedurally
     // Each iteration represents one rain streak
@@ -112,17 +104,15 @@ void main() {
         // Streaks are very thin for realistic rain appearance
         float alpha = smoothstep(0.001, 0.0005, distToLine) * isInStreak;
 
-        // Accumulate rain color with slight blue tint
-        // RGB(0.7, 0.8, 1.0) creates cool blue-white rain color
-        // This enhances the rainy atmosphere and contrasts with warm backgrounds
-        rainColor += vec3(0.7, 0.8, 1.0) * alpha;
+        // Accumulate rain alpha
+        rainAlpha += alpha;
     }
 
-    // Composite: background + rain streaks using proper alpha blending
     // Limit rain intensity to prevent oversaturation
-    float rainIntensity = min(length(rainColor), 0.5); // Cap at 0.5 to prevent white-out
-    vec3 finalRainColor = normalize(rainColor + vec3(0.001)) * rainIntensity;
+    rainAlpha = min(rainAlpha, 1.0);
 
-    // Alpha blend rain over background (not pure additive to prevent oversaturation)
-    gl_FragColor = vec4(background.rgb * (1.0 - rainIntensity) + finalRainColor, background.a);
+    // Output rain particles with blue-white tint and alpha
+    // RGB(0.7, 0.8, 1.0) creates cool blue-white rain color
+    // The compositor will blend this over the background
+    gl_FragColor = vec4(0.7, 0.8, 1.0, rainAlpha);
 }
