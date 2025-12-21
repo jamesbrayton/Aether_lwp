@@ -77,25 +77,15 @@ class AetherWallpaperService : WallpaperService() {
             // Load configuration
             val config = configManager?.loadConfig()
 
-            // Create renderer with configuration
+            // Create renderer with full configuration
             config?.let {
-                // Get the first enabled layer's shader, or use passthrough.frag if no layers
-                val firstEnabledLayer = it.layers.firstOrNull { layer -> layer.enabled }
-                val fragmentShaderPath = if (firstEnabledLayer != null) {
-                    val shader = shaderRegistry?.getShaderById(firstEnabledLayer.shaderId)
-                    shader?.fragmentShaderPath ?: "shaders/passthrough.frag"
-                } else {
-                    // No layers - use passthrough shader to just display background
-                    "shaders/passthrough.frag"
-                }
+                Log.d(TAG, "Creating renderer with ${it.layers.size} layers")
 
-                // Strip "shaders/" prefix since ShaderLoader.loadShaderFromAssets() adds it
-                val fragmentShaderFile = fragmentShaderPath.removePrefix("shaders/")
-
+                // Pass full config to renderer (handles all layers)
                 renderer = GLRenderer(
-                    this@AetherWallpaperService,
-                    "vertex_shader.vert",  // Just filename, ShaderLoader adds "shaders/" prefix
-                    fragmentShaderFile
+                    context = this@AetherWallpaperService,
+                    vertexShaderFile = "vertex_shader.vert",
+                    wallpaperConfig = it
                 )
 
                 // Set background configuration if available
@@ -107,18 +97,6 @@ class AetherWallpaperService : WallpaperService() {
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to parse background URI: $uriString", e)
                     }
-                }
-
-                // Set shader parameters from first enabled layer
-                firstEnabledLayer?.let { layer ->
-                    val params = layer.params.mapValues { (_, value) ->
-                        when (value) {
-                            is Number -> value.toFloat()
-                            else -> value.toString().toFloat()
-                        }
-                    }
-                    Log.d(TAG, "Setting shader parameters: $params")
-                    renderer?.setShaderParameters(params)
                 }
 
                 // Create GL rendering thread with wallpaper's surface holder
