@@ -69,8 +69,8 @@ void main() {
         // Speed is scaled down (0.1) for gentle motion
         // mod() wraps particles from bottom (0.0) to top (1.0)
         float fallOffset = mod(u_time * u_speed * 0.1, 1.0);
-        float yPos = particleSeed.y - fallOffset;
-        yPos = mod(yPos + 1.0, 1.0); // Wrap around: when yPos < 0, it becomes 1.0
+        float yPos = particleSeed.y + fallOffset;
+        yPos = mod(yPos, 1.0); // Wrap around: when yPos >= 1.0, it wraps to 0.0
 
         // Lateral drift (side-to-side motion)
         // sin() creates oscillating motion
