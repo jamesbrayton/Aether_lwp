@@ -1,7 +1,7 @@
 ---
 tags: #architecture #design_decisions #rationale
 created: 2025-12-16
-updated: 2025-12-16
+updated: 2025-12-18
 ---
 
 # Architectural Decision Records (ADR)
@@ -541,6 +541,103 @@ void main() {
 
 ---
 
+## ADR-012: Docker for Development, Not Kubernetes
+
+**Status:** Accepted  
+**Date:** 2025-12-18  
+**Context:** Experimented with Kubernetes-based devcontainers (via DevPod) to enable cloud-based development. Encountered platform architecture constraints.
+
+**Decision:** Use Docker-based devcontainers locally. Defer remote/cloud development to future exploration.
+
+**Problem Discovered:**
+- **Rancher Desktop** runs a single-node Kubernetes cluster
+- Kubernetes nodes have a single architecture (ARM64 on M-series Macs)
+- When ARM workloads already exist on a node, Kubernetes **cannot provision x86/amd64 workloads**
+- Mixed architecture workloads require multi-node clusters with architecture-specific node selectors
+- Single-node clusters (like Rancher Desktop) cannot run both ARM and x86 containers simultaneously
+
+**Root Cause:**
+- Kubernetes pod scheduling considers node architecture
+- Image manifest list contains platform-specific variants
+- When pulling `ghcr.io/username/image:latest`, Kubernetes checks manifest list
+- If only `linux/amd64` variant exists, but node is `linux/arm64`, pull fails
+- Error: `"no matching manifest for linux/arm64/v8 in the manifest list"`
+
+**Attempted Solutions (Failed):**
+1. **Build multi-platform image** - Would work if node could run both architectures
+2. **Force platform via `--platform` flag** - Only works for Docker, not Kubernetes pod specs
+3. **RuntimeClass with emulation** - Requires multi-node cluster or QEMU integration
+4. **DevPod platform flag** - DevPod respects host architecture, not custom platform specs
+
+**Why This Matters:**
+- Android SDK tools (AAPT2, build-tools) are compiled for x86_64
+- Devcontainer must run as x86_64 for Android builds to work
+- Rancher Desktop is convenient for local Kubernetes development (already installed for other projects)
+- Running devcontainer in Kubernetes would enable future cloud/remote development workflows
+
+**Decision Rationale:**
+1. **Local Development:** Docker-based devcontainer works perfectly
+   - `docker run --platform linux/amd64` forces x86_64 container
+   - Rosetta 2 handles emulation transparently on M-series Macs
+   - Zero configuration required, works immediately
+
+2. **Cloud Development (Future):** Requires different approach
+   - Multi-node Kubernetes cluster with x86_64 node pool
+   - GitHub Codespaces (native x86_64 infrastructure)
+   - Cloud workstations (GCP, AWS) with x86_64 instances
+   - Remote VSCode server on x86_64 host
+
+3. **Not Worth VM Overhead:** Running additional VM for multi-node Kubernetes is overkill
+   - Local Docker already works
+   - Adds complexity (VM management, resource allocation)
+   - No tangible benefit for local development
+
+**Implementation:**
+- ✅ Use Docker-based devcontainer for local development
+- ✅ Keep existing Rancher Desktop for other Kubernetes projects
+- ✅ Document Kubernetes constraint in Memory Bank and ARM_DEVELOPMENT.md
+- ✅ Explore cloud-based devcontainers in future (Phase 3+)
+
+**Devcontainer Configuration:**
+```json
+{
+  "image": "ghcr.io/username/aether-android-dev:latest",
+  "runArgs": ["--platform=linux/amd64"],
+  "remoteEnv": {
+    "DOCKER_DEFAULT_PLATFORM": "linux/amd64"
+  }
+}
+```
+
+**Dockerfile:**
+```dockerfile
+FROM --platform=linux/amd64 ubuntu:noble
+# ... rest of build
+```
+
+**Build Command:**
+```bash
+DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build --platform linux/amd64 -t image:latest .
+```
+
+**Consequences:**
+- ✅ Local Docker devcontainer works perfectly (x86_64 + Rosetta 2)
+- ✅ No additional VM overhead on development machine
+- ✅ Can still use Rancher Desktop for ARM Kubernetes workloads (other projects)
+- ✅ Clean separation: Docker for dev, GitHub Actions for CI/CD
+- ⚠️ Remote/cloud development deferred (acceptable - not blocking Phase 1)
+- ✅ Architecture constraint documented for future reference
+
+**Future Exploration (Phase 3+):**
+- GitHub Codespaces (native x86_64, no configuration needed)
+- Remote development on cloud x86_64 instances (GCP/AWS)
+- Multi-node Kubernetes cluster with architecture node selectors (if needed)
+
+**Key Learning:**
+Kubernetes single-node clusters cannot run mixed-architecture workloads. This is a fundamental Kubernetes scheduling constraint, not a DevPod or container runtime issue. For local development with architecture constraints, Docker is simpler and more flexible than Kubernetes.
+
+---
+
 ## Summary of Key Architectural Choices
 
 | Component | Decision | Rationale |
@@ -555,6 +652,7 @@ void main() {
 | **Phase 1 Scope** | 2 effects, no parallax | Validate architecture, faster MVP |
 | **Shader Metadata** | Embedded in GLSL (JavaDoc-style) | Single source of truth, extensible |
 | **Shader Contract** | Standard uniforms required | Consistency, simplicity, future-proof |
+| **Development** | Docker (not Kubernetes) | Local flexibility, no VM overhead |
 
 ---
 

@@ -355,4 +355,52 @@ class ShaderMetadataParserTest {
         assertEquals(0.1f, param?.step)
         assertEquals("Movement speed", param?.description)
     }
+
+    @Test
+    fun `parse snow shader from actual file content`() {
+        val shaderSource = """
+/**
+ * @shader Falling Snow
+ * @id snow
+ * @version 1.0.0
+ * @author Aether Team
+ * @source https://github.com/aetherteam/aether-lwp-shaders
+ * @license MIT
+ * @description Gentle falling snow with lateral drift. Particles fall downward with subtle side-to-side motion, creating a peaceful winter atmosphere.
+ * @tags winter, weather, particles, gentle
+ * @minOpenGL 2.0
+ *
+ * @param u_particleCount float 100.0 min=10.0 max=200.0 step=1.0 name="Particle Count" desc="Number of visible snow particles"
+ * @param u_speed float 1.0 min=0.1 max=3.0 step=0.1 name="Fall Speed" desc="How fast snow falls"
+ * @param u_driftAmount float 0.5 min=0.0 max=1.0 step=0.05 name="Lateral Drift" desc="Amount of side-to-side wobble"
+ */
+
+precision mediump float;
+
+uniform sampler2D u_backgroundTexture;
+uniform float u_time;
+void main() {
+    gl_FragColor = vec4(1.0);
+}
+        """.trimIndent()
+
+        val descriptor = parser.parse(shaderSource, "snow.frag")
+
+        // Test that it parses without throwing
+        assertNotNull(descriptor)
+        assertEquals("snow", descriptor.id)
+        assertEquals("Falling Snow", descriptor.name)
+        assertEquals("1.0.0", descriptor.version)
+        assertEquals(3, descriptor.parameters.size)
+
+        // Test that validation passes
+        descriptor.validate()
+
+        // Check parameters
+        val particleCount = descriptor.parameters[0]
+        assertEquals("u_particleCount", particleCount.id)
+        assertEquals(100.0f, particleCount.defaultValue)
+        assertEquals(10.0f, particleCount.minValue)
+        assertEquals(200.0f, particleCount.maxValue)
+    }
 }

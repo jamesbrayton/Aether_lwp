@@ -306,6 +306,7 @@ class TextureManager(private val context: Context) {
         )
 
         // Upload bitmap to texture
+        // Note: UV flip is handled in shader (uv.y = 1.0 - uv.y)
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
 
         val error = GLES20.glGetError()

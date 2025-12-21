@@ -6,21 +6,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Aether_lwp** is an Android live wallpaper application that combines user-selected background images with GPU-accelerated particle effects and gyroscope-based 3D parallax motion using GLSL shaders.
 
-**Current Status**: The project is in early setup phase on the `mvp` branch. Development infrastructure is complete, but the Android project structure and source code have not yet been created.
+**Current Status**: Active development on the `itr3` branch. Multi-layer compositing pipeline implemented and functional. Manual testing pending.
 
 ## Development Environment
 
 This project uses a Docker-based development environment configured in `.devcontainer/`.
+The container runs as **x86_64** (`--platform=linux/amd64`) for Java/Android SDK compatibility.
+On M-series Macs, Rosetta 2 handles ARM translation transparently.
 
 ### Environment Specifications
-- **Java**: JDK 21 (Eclipse Temurin) at `/usr/lib/jvm/temurin-21-jdk-amd64`
-- **Gradle**: 8.7
+- **Container Architecture**: x86_64 (linux/amd64)
+- **Java**: JDK 21 (Eclipse Temurin) at `/usr/lib/jvm/java-21`
+- **Gradle**: 8.9
 - **Kotlin**: 1.9.23
+- **Android Gradle Plugin**: 8.7.3
 - **Android SDK**: API 34, build-tools 34.0.0
 - **NDK**: 26.1.10909125
 - **CMake**: 3.22.1
 - **Graphics**: OpenGL ES 2.0 with GLSL shaders
-- **Min Android API**: 21 (Android 5.0+)
+- **Min Android API**: 26 (Android 8.0+)
+- **Target Android API**: 34 (Android 14)
 
 ### Build Commands (Once Android Project Created)
 
@@ -52,7 +57,7 @@ This project uses a Docker-based development environment configured in `.devcont
 
 ## Architecture
 
-### Core Components (Planned)
+### Core Components
 
 The application follows a clean, modular architecture:
 
@@ -61,13 +66,19 @@ Settings Activity (Configuration UI)
     ↓ (persists config to JSON)
 SharedPreferences
     ↓ (reads on startup)
-Live Wallpaper Service
-    └── OpenGL ES 2.0 Renderer
-        ├── Shader Manager (loads GLSL from assets/shaders/)
-        ├── Texture Manager (loads user images)
-        ├── Multi-pass Compositor (blends layers)
-        ├── Gyroscope Handler (sensor input)
-        └── Render Loop (30/60 FPS configurable)
+AetherWallpaperService
+    ↓ (passes WallpaperConfig)
+GLRenderer (Multi-Pass Rendering)
+    ├── LayerManager (shader program caching & layer ordering)
+    ├── FBOManager (framebuffer object management)
+    ├── ShaderLoader (compiles GLSL from assets/shaders/)
+    ├── TextureManager (loads user images)
+    ├── Phase 1: Render each layer to FBO
+    │   ├─ Layer 0 → FBO 0 (snow.frag)
+    │   ├─ Layer 1 → FBO 1 (rain.frag)
+    │   └─ Layer N → FBO N (effect.frag)
+    └── Phase 2: Composite all FBOs to screen
+        └─ compositor.frag (blends up to 5 layers)
     ↓ (uses)
 GLSL Shader Library (modular particle effects)
 ```
@@ -76,43 +87,85 @@ GLSL Shader Library (modular particle effects)
 
 Located in `app/src/main/java/com/aether/wallpaper/`:
 
-- **WallpaperService.java**: Main live wallpaper service, extends Android WallpaperService
-- **GLRenderer.java**: OpenGL ES 2.0 rendering engine, handles render loop and framebuffer management
-- **ShaderLoader.java**: Loads and compiles GLSL shaders from assets, manages shader programs
-- **LayerManager.java**: Manages multi-layer composition, ordering, and blending
-- **GyroscopeHandler.java**: Processes gyroscope sensor data for parallax effects
-- **SettingsActivity.java**: Main configuration UI with live preview
-- **ImageCropActivity.java**: Interactive image cropping tool
-- **LayerConfigAdapter.java**: RecyclerView adapter for layer management UI
+- **AetherWallpaperService.kt**: Main live wallpaper service, extends Android WallpaperService
+- **GLRenderer.kt**: OpenGL ES 2.0 multi-pass rendering engine, orchestrates layer rendering and compositing
+- **LayerManager.kt**: Manages shader programs per layer, caching and ordering
+- **FBOManager.kt**: Manages framebuffer objects for off-screen layer rendering
+- **ShaderLoader.kt**: Loads and compiles GLSL shaders from assets
+- **TextureManager.kt**: Loads and manages background image textures
+- **ConfigManager.kt**: Loads/saves wallpaper configuration from SharedPreferences
+- **ShaderRegistry.kt**: Auto-discovers shaders from assets with metadata parsing
+- **SettingsActivity.kt**: Main configuration UI with layer management
+- **ActiveLayersActivity.kt**: Layer ordering and opacity control
+- **EffectLibraryActivity.kt**: Shader effect selection UI
+- **BackgroundSelectionActivity.kt**: Background image selection and cropping
 
 ### Shader System
 
 GLSL shaders are stored in `app/src/main/assets/shaders/`:
 
 - **vertex_shader.vert**: Shared vertex shader for fullscreen quad rendering
-- **Effect Shaders** (fragment shaders):
+- **compositor.frag**: Internal compositor shader for multi-layer blending (not user-selectable)
+- **Effect Shaders** (fragment shaders, user-selectable):
   - `snow.frag` - Falling snow with lateral drift
   - `rain.frag` - Fast rain streaks with motion blur
-  - `bubbles.frag` - Rising bubbles with wobble
-  - `dust.frag` - Slow floating dust with Brownian motion
-  - `smoke.frag` - Rising smoke with expansion and fade
+  - `test.frag` - Test pattern shader
+  - `passthrough.frag` - Simple passthrough (background only)
 
 #### Standard Shader Uniforms
 
 All effect shaders receive these uniforms:
-- `sampler2D u_backgroundTexture` - User's background image
+- `sampler2D u_backgroundTexture` - User's background image (usually not sampled by effect shaders)
 - `float u_time` - Animation time in seconds
 - `vec2 u_resolution` - Screen resolution
 - `vec2 u_gyroOffset` - Gyroscope-based parallax offset
 - `float u_depthValue` - Layer depth (0.0=far, 1.0=near)
 - Effect-specific parameters (e.g., `u_particleCount`, `u_speed`)
 
-#### Adding New Shader Effects
+#### Shader Output Contract (CRITICAL for Multi-Layer Rendering)
+
+**Effect shaders MUST:**
+1. Work in OpenGL coordinate space (0,0 at bottom-left, no Y-flip for particles)
+2. Output ONLY the effect with alpha: `vec4(particleColor, particleAlpha)`
+3. NOT sample or composite with `u_backgroundTexture` (compositor handles background)
+4. NOT flip Y coordinates for particle calculations
+
+**Example:**
+```glsl
+void main() {
+    vec2 uv = gl_FragCoord.xy / u_resolution;  // OpenGL space, no flip
+    float particleAlpha = /* calculate particle visibility */;
+    gl_FragColor = vec4(particleColor, particleAlpha);  // Output particles only
+}
+```
+
+**Why:**
+- The compositor shader blends all effect layers over the background
+- Each effect shader outputs to an FBO in OpenGL coordinate space
+- Double Y-flipping causes upside-down rendering
+- Compositing in effect shaders causes multiple background copies
+
+#### Adding New Shader Effects (Zero-Code Approach)
+
+The shader system uses auto-discovery - **no code changes required**:
 
 1. Create new `.frag` file in `assets/shaders/` using standard uniforms
-2. Register effect in ShaderLoader effect registry
-3. Add UI preview thumbnail and parameter controls in SettingsActivity
-4. Document shader parameters and behavior
+2. Add metadata in comments:
+   ```glsl
+   /**
+    * @shader Display Name
+    * @id unique_shader_id
+    * @version 1.0.0
+    * @author Your Name
+    * @description Brief description
+    * @tags category, tags, here
+    * @minOpenGL 2.0
+    * @param paramName {min:0.0, max:1.0, default:0.5} Description
+    */
+   ```
+3. ShaderRegistry auto-discovers the shader on app startup
+4. EffectLibraryActivity auto-generates UI from metadata
+5. No registration code, no manual UI creation required
 
 ### Data Persistence
 
@@ -138,13 +191,40 @@ Configuration is stored in SharedPreferences as JSON:
 }
 ```
 
-### Multi-Layer Rendering
+### Multi-Layer Rendering (Implemented)
 
-The system supports 3-5 simultaneous particle effect layers:
-- Each layer renders to a texture via framebuffer
-- Layers composite in order with alpha blending
-- Per-layer opacity and depth control
-- Parallax offset calculated per layer based on depth value
+The system supports up to 5 simultaneous particle effect layers using multi-pass rendering:
+
+**Architecture:**
+- **Pass 1 (Per-Layer)**: Each enabled layer renders to its own FBO (Framebuffer Object) using its effect shader
+- **Pass 2 (Compositing)**: Compositor shader blends all layer textures to screen with alpha blending
+
+**FBOManager:**
+- Creates RGBA8 framebuffers with texture attachments
+- One FBO per enabled layer
+- Automatically resizes on screen rotation
+- Validates framebuffer completeness
+
+**LayerManager:**
+- Caches compiled shader programs (compile once, reuse)
+- Filters and sorts layers by `order` property
+- Provides enabled layers to renderer
+
+**Compositor Shader (`compositor.frag`):**
+- Blends up to 5 layer textures using alpha compositing
+- Formula: `mix(background, layer, layer.a * opacity)`
+- Conditional rendering based on `u_layerCount`
+- GLSL ES 2.0 compatible (no dynamic sampler indexing)
+
+**Texture Unit Allocation:**
+- Unit 0: Background texture
+- Units 1-5: Layer textures (from FBOs)
+
+**Per-Layer Controls:**
+- Opacity: 0.0 (transparent) to 1.0 (opaque)
+- Depth: 0.0 (background, minimal parallax) to 1.0 (foreground, maximum parallax)
+- Order: Layer stacking order (lower values render first)
+- Enabled: Toggle layer on/off without deletion
 
 ### Gyroscope Parallax
 

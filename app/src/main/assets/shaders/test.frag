@@ -27,15 +27,14 @@ uniform float u_intensity;
 uniform float u_speed;
 
 void main() {
+    // Calculate UV coordinates in OpenGL space (0,0 at bottom-left)
     vec2 uv = gl_FragCoord.xy / u_resolution;
-
-    // Sample background
-    vec4 background = texture2D(u_backgroundTexture, uv);
 
     // Simple animated gradient effect for testing
     float gradient = sin(uv.x * 10.0 + u_time * u_speed) * 0.5 + 0.5;
-    vec3 testColor = vec3(gradient) * u_intensity;
+    float effectAlpha = gradient * u_intensity * 0.3; // Scale down to prevent oversaturation
+    vec3 testColor = vec3(1.0, 0.5, 0.2); // Orange tint for visibility
 
-    // Composite with background
-    gl_FragColor = background + vec4(testColor, 1.0);
+    // Output test effect with alpha (compositor will blend over background)
+    gl_FragColor = vec4(testColor, effectAlpha);
 }

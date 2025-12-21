@@ -1,15 +1,10 @@
 {
   "name": "Aether Android Development",
   
-  // Use your custom image
-  "build": {
-    "dockerfile": "dockerfile",
-    "context": "..",
-    "args": {
-      // Build arguments for Dockerfile
-      "USERNAME": "developer"
-    }
-  },
+    // Use pre-built image (local or from registry)
+  // Local: "aether-android-dev:latest"
+  // GitHub: "ghcr.io/YOUR_USERNAME/aether-android-dev:latest"
+  "image": "ghcr.io/jamesbrayton/aether_lwp/aether-android-dev:latest",
   
   "workspaceFolder": "/workspace",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
@@ -17,7 +12,8 @@
   // Enable USB device access for ADB
   "runArgs": [
     "--device=/dev/bus/usb",
-    "--privileged"
+    "--privileged",
+    "--platform=linux/amd64"
   ],
   
   // Optional: persistent home directory for Gradle cache, etc.
@@ -59,11 +55,11 @@
         "java.configuration.runtimes": [
           {
             "name": "JavaSE-21",
-            "path": "/usr/lib/jvm/temurin-21-jdk-amd64",
+            "path": "/usr/lib/jvm/java-21",
             "default": true
           }
         ],
-        "java.jdt.ls.java.home": "/usr/lib/jvm/temurin-21-jdk-amd64",
+        "java.jdt.ls.java.home": "/usr/lib/jvm/java-21",
         "files.watcherExclude": {
           "**/build/**": true,
           "**/.gradle/**": true,

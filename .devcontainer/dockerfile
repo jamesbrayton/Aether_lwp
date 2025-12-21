@@ -1,5 +1,7 @@
 # Dockerfile for Aether Android Development Environment
-FROM ubuntu:noble
+# Force x86_64 architecture for Java/Android SDK compatibility
+# Rosetta 2 handles ARM translation on M-series Macs
+FROM --platform=linux/amd64 ubuntu:noble
 
 # Metadata
 LABEL maintainer="jamesgbrayton@gmail.com"
