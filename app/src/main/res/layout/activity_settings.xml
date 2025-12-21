@@ -75,23 +75,17 @@
 
       </com.google.android.material.card.MaterialCardView>
 
-      <!-- Available Effects Section -->
-      <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Available Effects"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/white"
-        android:layout_marginBottom="8dp" />
-
-      <!-- Effect selector RecyclerView -->
-      <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/effectSelectorRecyclerView"
+      <!-- Browse Effects Button -->
+      <com.google.android.material.button.MaterialButton
+        android:id="@+id/browseEffectsButton"
+        style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:nestedScrollingEnabled="false" />
+        android:text="@string/browse_effects"
+        android:textSize="16sp"
+        app:icon="@android:drawable/ic_input_add"
+        app:iconGravity="start" />
 
       <!-- Active Layers Section -->
       <TextView

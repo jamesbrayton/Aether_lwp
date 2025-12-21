@@ -18,7 +18,6 @@ import com.aether.wallpaper.config.ConfigManager
 import com.aether.wallpaper.model.BackgroundConfig
 import com.aether.wallpaper.model.CropRect
 import com.aether.wallpaper.model.LayerConfig
-import com.aether.wallpaper.model.ShaderDescriptor
 import com.aether.wallpaper.model.WallpaperConfig
 import com.aether.wallpaper.shader.ShaderRegistry
 import com.google.android.material.appbar.MaterialToolbar
@@ -43,14 +42,13 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var toolbar: MaterialToolbar
     private lateinit var backgroundPreview: ImageView
     private lateinit var selectBackgroundButton: Button
-    private lateinit var effectSelectorRecyclerView: RecyclerView
+    private lateinit var browseEffectsButton: Button
     private lateinit var layersRecyclerView: RecyclerView
     private lateinit var emptyLayersMessage: TextView
     private lateinit var applyWallpaperButton: Button
 
     private lateinit var shaderRegistry: ShaderRegistry
     private lateinit var configManager: ConfigManager
-    private lateinit var effectAdapter: EffectSelectorAdapter
     private lateinit var layerAdapter: LayerAdapter
 
     private var currentConfig: WallpaperConfig? = null
@@ -77,7 +75,7 @@ class SettingsActivity : AppCompatActivity() {
         toolbar = findViewById(R.id.toolbar)
         backgroundPreview = findViewById(R.id.backgroundPreview)
         selectBackgroundButton = findViewById(R.id.selectBackgroundButton)
-        effectSelectorRecyclerView = findViewById(R.id.effectSelectorRecyclerView)
+        browseEffectsButton = findViewById(R.id.browseEffectsButton)
         layersRecyclerView = findViewById(R.id.layersRecyclerView)
         emptyLayersMessage = findViewById(R.id.emptyLayersMessage)
         applyWallpaperButton = findViewById(R.id.applyWallpaperButton)
@@ -91,13 +89,6 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerViews() {
-        // Effect selector (available shaders)
-        effectSelectorRecyclerView.layoutManager = LinearLayoutManager(this)
-        effectAdapter = EffectSelectorAdapter(shaderRegistry, onAddEffect = { shaderDescriptor: ShaderDescriptor ->
-            onAddEffect(shaderDescriptor.id)
-        })
-        effectSelectorRecyclerView.adapter = effectAdapter
-
         // Active layers
         layersRecyclerView.layoutManager = LinearLayoutManager(this)
         layerAdapter = LayerAdapter(
@@ -106,10 +97,6 @@ class SettingsActivity : AppCompatActivity() {
             onDeleteLayer = { position -> onDeleteLayer(position) }
         )
         layersRecyclerView.adapter = layerAdapter
-
-        // Discover shaders and populate effect selector
-        val shaders = shaderRegistry.discoverShaders()
-        effectAdapter.submitList(shaders)
     }
 
     private fun loadConfiguration() {
@@ -161,6 +148,11 @@ class SettingsActivity : AppCompatActivity() {
     private fun setupListeners() {
         selectBackgroundButton.setOnClickListener {
             selectBackgroundImage()
+        }
+
+        browseEffectsButton.setOnClickListener {
+            val intent = Intent(this, EffectLibraryActivity::class.java)
+            startActivityForResult(intent, EffectLibraryActivity.REQUEST_CODE_EFFECT_LIBRARY)
         }
 
         applyWallpaperButton.setOnClickListener {
@@ -314,6 +306,12 @@ class SettingsActivity : AppCompatActivity() {
                     }
 
                     tempImageUri = null
+                }
+            }
+            EffectLibraryActivity.REQUEST_CODE_EFFECT_LIBRARY -> {
+                if (resultCode == RESULT_OK && data != null) {
+                    val shaderId = data.getStringExtra(EffectLibraryActivity.EXTRA_SHADER_ID)
+                    shaderId?.let { onAddEffect(it) }
                 }
             }
         }

@@ -37,6 +37,14 @@
       android:label="Crop Image"
       android:theme="@style/Theme.Aether" />
 
+    <!-- Effect Library Activity -->
+    <activity
+      android:name=".ui.EffectLibraryActivity"
+      android:exported="false"
+      android:label="@string/effect_library_title"
+      android:theme="@style/Theme.Aether"
+      android:parentActivityName=".ui.SettingsActivity" />
+
     <!-- Live Wallpaper Service -->
     <service
       android:name=".AetherWallpaperService"

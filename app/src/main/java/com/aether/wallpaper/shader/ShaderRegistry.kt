@@ -37,42 +37,32 @@ class ShaderRegistry(private val context: Context) {
 
         try {
             val shaderFiles = context.assets.list(SHADERS_DIR) ?: emptyArray()
-            Log.d(TAG, "Found ${shaderFiles.size} files in $SHADERS_DIR: ${shaderFiles.joinToString()}")
 
             for (filename in shaderFiles) {
-                Log.d(TAG, "Processing file: $filename")
                 if (filename.endsWith(".frag")) {
                     try {
                         val filePath = "$SHADERS_DIR/$filename"
-                        Log.d(TAG, "Loading shader source from: $filePath")
                         val shaderSource = loadShaderSource(filePath)
-                        Log.d(TAG, "Shader source loaded (${shaderSource.length} bytes), parsing metadata...")
                         val descriptor = parser.parse(shaderSource, filePath)
-                        Log.d(TAG, "Parsed shader: id=${descriptor.id}, name=${descriptor.name}, params=${descriptor.parameters.size}")
 
                         if (validateShader(descriptor)) {
                             descriptors[descriptor.id] = descriptor
-                            Log.i(TAG, "✓ Successfully discovered shader: ${descriptor.getSummary()}")
+                            Log.d(TAG, "Discovered shader: ${descriptor.getSummary()}")
                         } else {
-                            Log.w(TAG, "✗ Shader validation failed: $filename")
+                            Log.w(TAG, "Shader validation failed: $filename")
                         }
                     } catch (e: ShaderParseException) {
-                        Log.e(TAG, "✗ Failed to parse shader $filename: ${e.message}", e)
-                        e.printStackTrace()
+                        Log.e(TAG, "Failed to parse shader $filename: ${e.message}", e)
                         // Continue with other shaders - don't let one bad shader break discovery
                     } catch (e: Exception) {
-                        Log.e(TAG, "✗ Unexpected error parsing shader $filename: ${e.message}", e)
-                        e.printStackTrace()
+                        Log.e(TAG, "Unexpected error parsing shader $filename: ${e.message}", e)
                     }
-                } else {
-                    Log.d(TAG, "Skipping non-.frag file: $filename")
                 }
             }
 
-            Log.i(TAG, "=== Shader discovery complete. Found ${descriptors.size} valid shaders: ${descriptors.keys.joinToString()} ===")
+            Log.i(TAG, "Shader discovery complete. Found ${descriptors.size} valid shaders.")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to discover shaders: ${e.message}", e)
-            e.printStackTrace()
         }
 
         return descriptors.values.toList()
